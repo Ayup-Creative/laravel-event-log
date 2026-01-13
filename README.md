@@ -1,95 +1,223 @@
 # Laravel Event Logger
 
-A structured, asynchronous, relational event logging package for Laravel. Designed for auditability, traceability, and cross-service correlation.
+[![PHP Tests](https://github.com/Ayup-Creative/event-log/actions/workflows/phpunit.yml/badge.svg)](https://github.com/ayup-creative/event-log/actions/workflows/phpunit.yml)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/ayup-creative/event-log.svg?style=flat-square)](https://packagist.org/packages/ayup-creative/event-log)
+[![Total Downloads](https://img.shields.io/packagist/dt/ayup-creative/event-log.svg?style=flat-square)](https://packagist.org/packages/ayup-creative/event-log)
+[![License](https://img.shields.io/packagist/l/ayup-creative/event-log.svg?style=flat-square)](https://packagist.org/packages/ayup-creative/event-log)
+
+A high-performance, structured, asynchronous, and relational event logging package for Laravel. Designed for auditability, traceability, and cross-service correlation without storing sensitive payload data.
 
 ## Core Design Goals
 
-- **Log facts, not state**: Records what happened, not the resulting state.
-- **No payloads**: Avoids storing sensitive data, JSON blobs, or PII.
-- **Async-first**: Persistence is handled via background jobs.
-- **Immutable**: Events are never changed once written.
-- **Relational**: Supports multiple related models per event.
-- **Idempotent**: Safe to retry without creating duplicates.
+-   **Log Facts, Not State**: Records what happened (the event), not the resulting state of the model.
+-   **Privacy by Design**: Avoids storing sensitive data, JSON blobs, or PII. It links to models instead of copying their data.
+-   **Async-First**: All event persistence is handled via Laravel's queue system to ensure zero impact on request performance.
+-   **Exactly-Once Delivery**: Built-in idempotency ensures that retried queue jobs do not create duplicate event records.
+-   **Relational Graph**: Supports a primary "subject" and multiple "related" models per event, allowing for complex traceability.
+-   **Audit Ready**: Captures causers (users, system, jobs), correlation IDs, and transaction IDs.
+-   **OpenTelemetry Ready**: Seamlessly integrates with distributed tracing systems.
+
+---
 
 ## Installation
 
+You can install the package via composer:
+
 ```bash
 composer require ayup-creative/event-log
+```
+
+The service provider will automatically register itself.
+
+You should publish and run the migrations:
+
+```bash
+php artisan vendor:publish --tag="event-log-migrations"
 php artisan migrate
 ```
 
-## Usage
+You can optionally publish the config file:
 
-### 1. Manual Logging
+```bash
+php artisan vendor:publish --tag="event-log-config"
+```
 
-Use the `event_log` helper to record domain events.
+---
+
+## Configuration
+
+The published config file `config/event-log.php` allows you to customize the models used by the package:
 
 ```php
+return [
+    /*
+     * The model used to represent users in your application.
+     * This is used for the 'causer' relationship.
+     */
+    'user_model' => \App\Models\User::class,
+
+    /*
+     * The Eloquent models used for event logs and their relations.
+     * You can extend these to add your own logic or relationships.
+     */
+    'event_model' => \AyupCreative\EventLog\Models\EventLog::class,
+    'relation_model' => \AyupCreative\EventLog\Models\EventLogRelation::class,
+];
+```
+
+---
+
+## Usage
+
+### 1. Manual Domain Events
+
+Use the `event_log` helper to record significant domain events asynchronously.
+
+```php
+// Basic event
+event_log('organisation.created', $organisation);
+
+// Event with related models
 event_log('user.enrolled', $user, [$organisation, $course]);
 ```
 
-- **Event Name**: Dot-notation string (e.g., `order.placed`).
-- **Subject**: The primary model the event is about.
-- **Related**: (Optional) Array of additional models linked to the event.
+-   **Event Name**: A human-readable dot-notation string.
+-   **Subject**: The primary Eloquent model the event is about.
+-   **Related**: (Optional) An array of additional Eloquent models linked to this event.
 
 ### 2. Automatic Lifecycle Logging
 
-Add the `LogsEvents` trait to any Eloquent model to automatically log `created`, `updated`, `deleted`, and `restored` events.
+Add the `LogsEvents` trait to any Eloquent model to automatically log lifecycle events (`created`, `updated`, `deleted`, `restored`).
 
 ```php
 use AyupCreative\EventLog\Features\LogsEvents;
+use Illuminate\Database\Eloquent\Model;
 
-class Order extends Model
+class Mandate extends Model
 {
     use LogsEvents;
 }
 ```
 
-#### Customizing Automatic Logs
+#### Customizing Trait Behavior
 
-- **Namespace**: Override `eventNamespace()` to change the dot-notation prefix (defaults to snake_case of class name).
-- **Filtering**: Override `shouldLogEvent(string $event)` to return `false` for events you don't want to log.
-- **Relations**: Override `eventRelations(string $event)` to link additional models to the lifecycle event.
+You can override these methods in your model:
 
-### 3. Transactions and Correlation
+```php
+class Mandate extends Model
+{
+    use LogsEvents;
 
-#### Correlation ID
-Groups related events across requests, jobs, and services. Automatically generated per request/job.
-You can supply it via the `X-Correlation-ID` HTTP header.
+    // Change the dot-notation prefix (defaults to snake_case of class name)
+    public function eventNamespace(): string
+    {
+        return 'billing.mandate';
+    }
 
-#### Transaction ID
-Groups events that occurred within the same database transaction.
+    // Filter which events should be logged
+    public function shouldLogEvent(string $event): bool
+    {
+        return $event !== 'mandate.updated';
+    }
+
+    // Attach related models to automatic lifecycle events
+    public function eventRelations(string $event): array
+    {
+        return [$this->organisation];
+    }
+}
+```
+
+### 3. Grouping Events with Transactions
+
+Use the `WithEventTransaction` wrapper to group multiple events occurring within a single database transaction. This assigns a shared `transaction_id` to all events logged inside the closure.
 
 ```php
 use AyupCreative\EventLog\Support\WithEventTransaction;
 
-WithEventTransaction::run(function () {
-    // Your domain logic here
-    // All events logged inside will share a transaction_id
+WithEventTransaction::run(function () use ($user, $org) {
+    $org->save();
+    $user->organisations()->attach($org);
+
+    event_log('organisation.created', $org);
+    event_log('user.enrolled', $user, [$org]);
 });
 ```
 
-## Advanced
+### 4. Correlation IDs & Middleware
 
-### Idempotency
-Each event generates a deterministic key based on the correlation ID, transaction ID, event name, and subject. The database enforces uniqueness, making retries safe.
+Correlation IDs allow you to trace a logical action across multiple services and background jobs.
 
-### Causer
-The system automatically captures the authenticated user as the causer of the event. If no user is authenticated, it defaults to `null` (system-caused).
+#### Global Middleware
+Add the `EventCorrelationMiddleware` to your global or web/api middleware stack to automatically capture or generate a correlation ID for every request.
 
-### OpenTelemetry
-Correlation IDs are compatible with Trace IDs, allowing for easy integration with OpenTelemetry for distributed tracing.
+```php
+// app/Http/Kernel.php or bootstrap/app.php
+->withMiddleware(function (Middleware $middleware) {
+    $middleware->append(\AyupCreative\EventLog\Http\Middleware\EventCorrelationMiddleware::class);
+})
+```
+
+It looks for an `X-Correlation-ID` header in the request and ensures the same ID is returned in the response headers.
+
+#### Propagation via HTTP Client
+The package adds a macro to the Laravel HTTP client to easily propagate the correlation ID to internal services:
+
+```php
+use Illuminate\Support\Facades\Http;
+
+Http::withEventContext()->post('https://api.other-service.com/data');
+```
 
 ---
 
-## Technical Debt & Known Issues
+## Querying Events
 
-During the development of the test suite, the following issues were identified and should be addressed:
+You can retrieve a unified timeline of events for any model using the `EventLogger` class. This returns events where the model is either the **subject** or a **related** model.
 
-1. **Migration Bug**: `2024_02_27_100001_create_event_log_relations_table.php` has a duplicate index on `event_log_id`.
-2. **Class Loading**: `src/Support/Indemptency.php` is misspelled (should be `Idempotency.php`).
-3. **Property Conflict**: `WriteEventLogJob` has an incompatible `$queue` property definition with the `Queueable` trait.
-4. **Middleware**: `EventCorrelationMiddleware` does not yet return the `X-Correlation-ID` in the response header.
-5. **Model Fillables**: `EventLog` model is missing `correlation_id`, `transaction_id`, and `idempotency_key` in its `$fillable` array.
-6. **Sync Writes**: `EventLogger::log` performs synchronous writes, which violates the "Async by Default" rule. Use the `event_log` helper instead.
-7. **Observer Import**: `EventLogObserver` has a broken import for the `LogsEvents` trait.
+```php
+use AyupCreative\EventLog\EventLogger;
+
+$events = EventLogger::getFor($organisation);
+
+foreach ($events as $log) {
+    echo "{$log->event} caused by {$log->causerLabel()}";
+}
+```
+
+### Causer Labels
+The `EventLog` model provides a `causerLabel()` helper to identify who or what triggered the event:
+-   `user`: Returns the user's name (if authenticated).
+-   `system`: Internal system action.
+-   `job`: Action triggered by a background job.
+-   `webhook`: Action triggered by an external service.
+
+---
+
+## Advanced Features
+
+### Idempotency
+To prevent duplicate logs during queue retries, the package generates a deterministic `idempotency_key` for every event. If a job runs twice, the database uniqueness constraint will silently prevent the second record from being created.
+
+### OpenTelemetry Bridge
+If the `open-telemetry/opentelemetry` package is installed, the logger will automatically create spans for each event. The `correlation_id` is used to maintain trace context.
+
+---
+
+## Testing
+
+The package includes a comprehensive test suite. To run the tests:
+
+```bash
+composer test
+```
+
+Or manually:
+
+```bash
+vendor/bin/phpunit
+```
+
+## License
+
+The MIT License (MIT).

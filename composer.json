@@ -24,5 +24,8 @@
                 "AyupCreative\\EventLog\\EventLogServiceProvider"
             ]
         }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit"
     }
 }
