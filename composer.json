@@ -1,0 +1,28 @@
+{
+    "name": "ayup-creative/event-log",
+    "description": "Event log package for models in a Laravel application.",
+    "require-dev": {
+        "laravel/framework": "^12.0",
+        "orchestra/testbench": "^v10.8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "AyupCreative\\EventLog\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "AyupCreative\\EventLog\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "AyupCreative\\EventLog\\EventLogServiceProvider"
+            ]
+        }
+    }
+}
