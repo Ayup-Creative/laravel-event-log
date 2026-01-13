@@ -9,10 +9,17 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
+/**
+ * Class EventLog
+ *
+ * The main model representing an immutable fact in the system.
+ */
 class EventLog extends Model implements EventModel
 {
+    /** @var array<string> The attributes that aren't mass assignable. */
     protected $guarded = [];
 
+    /** @var array<string> The attributes that are mass assignable. */
     protected $fillable = [
         'event',
         'subject_type',
@@ -25,11 +32,21 @@ class EventLog extends Model implements EventModel
         'idempotency_key',
     ];
 
+    /**
+     * Get the primary model the event is about.
+     *
+     * @return MorphTo
+     */
     public function subject(): MorphTo
     {
         return $this->morphTo();
     }
 
+    /**
+     * Get the user who caused the event.
+     *
+     * @return BelongsTo
+     */
     public function causer(): BelongsTo
     {
         return $this->belongsTo(
@@ -37,6 +54,11 @@ class EventLog extends Model implements EventModel
         );
     }
 
+    /**
+     * Get the additional relational links for this event.
+     *
+     * @return HasMany
+     */
     public function relations(): HasMany
     {
         return $this->hasMany(
@@ -44,6 +66,11 @@ class EventLog extends Model implements EventModel
         );
     }
 
+    /**
+     * Access related models directly (filtered by configured user model).
+     *
+     * @return MorphToMany
+     */
     public function related(): MorphToMany
     {
         return $this->morphedByMany(
@@ -53,6 +80,11 @@ class EventLog extends Model implements EventModel
         );
     }
 
+    /**
+     * Get a human-readable label for the causer.
+     *
+     * @return string
+     */
     public function causerLabel(): string
     {
         return match ($this->causer_type) {

@@ -6,6 +6,12 @@ use Closure;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
+/**
+ * Class WithEventTransaction
+ *
+ * A wrapper to group multiple events within a single database transaction.
+ * Ensures all events logged inside the closure share the same transaction ID.
+ */
 class WithEventTransaction
 {
     /**

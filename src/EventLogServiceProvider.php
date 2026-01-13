@@ -9,21 +9,38 @@ use AyupCreative\EventLog\Support\EventContext;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\ServiceProvider;
 
+/**
+ * Class EventLogServiceProvider
+ *
+ * Registers the package services, configurations, and macros.
+ */
 class EventLogServiceProvider extends ServiceProvider
 {
+    /**
+     * Register any application services.
+     *
+     * @return void
+     */
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__ . '/../config/event-log.php', 'event-log');
 
+        // Bind models to the container to allow for easy overrides via config.
         $this->app->bind(EventModel::class, config('event-log.event_model'));
         $this->app->bind(EventRelationModel::class, config('event-log.relation_model'));
 
+        // Register aliases for easier access.
         $this->app->alias(EventModel::class, 'event');
         $this->app->alias(EventRelationModel::class, 'event-relation');
 
         $this->macros();
     }
 
+    /**
+     * Bootstrap any application services.
+     *
+     * @return void
+     */
     public function boot(): void
     {
         $this->loadMigrationsFrom(__DIR__ . '/../migrations');
@@ -31,6 +48,11 @@ class EventLogServiceProvider extends ServiceProvider
         $this->publishables();
     }
 
+    /**
+     * Register HTTP client macros for context propagation.
+     *
+     * @return void
+     */
     protected function macros(): void
     {
         Http::macro('withEventContext', function () {
@@ -42,6 +64,8 @@ class EventLogServiceProvider extends ServiceProvider
 
     /**
      * Publishes the package assets such as migrations and configuration files.
+     *
+     * @return void
      */
     protected function publishables(): void
     {

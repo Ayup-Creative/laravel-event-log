@@ -13,10 +13,28 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
+/**
+ * Class WriteEventLogJob
+ *
+ * A queued job responsible for persisting event logs to the database.
+ * Handles idempotency, causer resolution, and OpenTelemetry recording.
+ */
 class WriteEventLogJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    /**
+     * Create a new job instance.
+     *
+     * @param  string  $event  The dot-notation event name.
+     * @param  string  $subjectType  The class name of the subject model.
+     * @param  int|string  $subjectId  The primary key of the subject model.
+     * @param  string  $correlationId  Tracing ID for this logical action.
+     * @param  array   $related  Array of related model types and IDs.
+     * @param  int|null  $causerId  The ID of the user who caused the event.
+     * @param  string|null  $causerType  The type of causer.
+     * @param  string|null  $transactionId  Group ID for events in the same transaction.
+     */
     public function __construct(
         public string $event,
         public string $subjectType,
@@ -30,12 +48,17 @@ class WriteEventLogJob implements ShouldQueue
         $this->queue = config('event-log.queue', 'event-log');
     }
 
+    /**
+     * Execute the job.
+     *
+     * @return void
+     */
     public function handle(): void
     {
         /** @var Model|null $subject */
         $subject = $this->subjectType::find($this->subjectId);
 
-        // Subject deleted before job ran → do nothing
+        // If the subject was deleted before the job ran, we don't log the event.
         if (! $subject) {
             return;
         }
@@ -70,11 +93,17 @@ class WriteEventLogJob implements ShouldQueue
 
             $this->recordOpenTelemetryEvent();
         } catch (QueryException $e) {
-            // Duplicate → event already written
+            // If we hit a duplicate key exception, the event has already been recorded.
+            // We silently exit to ensure idempotency.
             return;
         }
     }
 
+    /**
+     * Record the event in OpenTelemetry if available.
+     *
+     * @return void
+     */
     protected function recordOpenTelemetryEvent(): void
     {
         OpenTelemetryBridge::recordEvent([
