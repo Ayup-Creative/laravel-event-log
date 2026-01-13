@@ -47,7 +47,7 @@ class EventLog extends Model implements EventModel
     public function related(): MorphToMany
     {
         return $this->morphedByMany(
-            Model::class,
+            config('event-log.user_model'),
             'related',
             'event_log_relations'
         );

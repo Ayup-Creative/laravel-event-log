@@ -7,13 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class EventLogObserver
 {
-    protected array $map = [
-        'created' => 'created',
-        'updated' => 'updated',
-        'deleted' => 'deleted',
-        'restored' => 'restored',
-    ];
-
     public function created(Model $model): void
     {
         $this->log('created', $model);

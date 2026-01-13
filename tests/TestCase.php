@@ -44,6 +44,7 @@ class TestCase extends Orchestra
             $table->id();
             $table->string('title');
             $table->foreignId('user_id')->nullable();
+            $table->softDeletes();
             $table->timestamps();
         });
     }

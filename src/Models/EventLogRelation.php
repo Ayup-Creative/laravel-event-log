@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class EventLogRelation extends Model implements EventRelationModel
 {
+    public $timestamps = false;
+
     protected $guarded = [];
 
     protected $fillable = [
@@ -19,7 +21,7 @@ class EventLogRelation extends Model implements EventRelationModel
 
     public function event(): BelongsTo
     {
-        return $this->belongsTo(EventLog::class);
+        return $this->belongsTo(EventLog::class, 'event_log_id');
     }
 
     public function related(): MorphTo
