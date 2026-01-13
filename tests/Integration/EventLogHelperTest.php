@@ -32,7 +32,23 @@ class EventLogHelperTest extends TestCase
                    $job->subjectType === get_class($subject) &&
                    $job->subjectId === 123 &&
                    $job->correlationId === 'test-corr' &&
-                   count($job->related) === 1;
+                   count($job->related) === 1 &&
+                   $job->queue === 'event-log';
+        });
+    }
+
+    public function test_event_log_respects_custom_queue_config(): void
+    {
+        config(['event-log.queue' => 'custom-queue']);
+        Queue::fake();
+
+        $subject = new \AyupCreative\EventLog\Tests\Models\DummyBook();
+        $subject->id = 123;
+
+        event_log('test.event', $subject);
+
+        Queue::assertPushed(WriteEventLogJob::class, function ($job) {
+            return $job->queue === 'custom-queue';
         });
     }
 }

@@ -26,7 +26,9 @@ class WriteEventLogJob implements ShouldQueue
         public ?int $causerId = null,
         public ?string $causerType = null,
         public ?string $transactionId = null
-    ) {}
+    ) {
+        $this->queue = config('event-log.queue', 'event-log');
+    }
 
     public function handle(): void
     {

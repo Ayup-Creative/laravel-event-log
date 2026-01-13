@@ -31,6 +31,6 @@ if (! function_exists('event_log')) {
             causerType: $causerType,
             correlationId: EventContext::correlationId(),
             transactionId: EventContext::transactionId()
-        );
+        )->onQueue(config('event-log.queue', 'event-log'));
     }
 }
