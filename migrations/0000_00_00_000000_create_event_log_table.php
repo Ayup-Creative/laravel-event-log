@@ -18,14 +18,13 @@ return new class extends Migration
 
             $table->morphs('subject');
 
-            $table->foreignId('causer_id')
+            $table->string('causer_id')
                 ->nullable()
-                ->constrained('users')
-                ->nullOnDelete();
+                ->index();
 
             $table->string('causer_type')->nullable(); // user | system | job | webhook
 
-            $table->foreignId('initiator_id')->nullable()->constrained('users');
+            $table->string('initiator_id')->nullable()->index();
 
             $table->uuid('correlation_id')->index();
             $table->uuid('transaction_id')->nullable()->index();

@@ -31,7 +31,7 @@ class WriteEventLogJob implements ShouldQueue
      * @param  int|string  $subjectId  The primary key of the subject model.
      * @param  string  $correlationId  Tracing ID for this logical action.
      * @param  array   $related  Array of related model types and IDs.
-     * @param  int|null  $causerId  The ID of the user who caused the event.
+     * @param  int|string|null  $causerId  The ID of the user who caused the event.
      * @param  string|null  $causerType  The type of causer.
      * @param  string|null  $transactionId  Group ID for events in the same transaction.
      */
@@ -41,7 +41,7 @@ class WriteEventLogJob implements ShouldQueue
         public int|string $subjectId,
         public string $correlationId,
         public array $related = [],
-        public ?int $causerId = null,
+        public int|string|null $causerId = null,
         public ?string $causerType = null,
         public ?string $transactionId = null
     ) {

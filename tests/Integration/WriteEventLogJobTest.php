@@ -130,4 +130,32 @@ class WriteEventLogJobTest extends TestCase
         $this->assertCount(1, $log->relations);
         $this->assertEquals($related->id, $log->relations->first()->related_id);
     }
+
+    public function test_it_supports_uuid_causer_id(): void
+    {
+        // Ensure OTEL doesn't break if class exists but tracer doesn't
+        if (class_exists('OpenTelemetry\API\Trace\TracerProvider')) {
+            $tracer = Mockery::mock('Tracer');
+            $tracer->shouldReceive('spanBuilder')->andReturn(Mockery::mock('SpanBuilder')->shouldReceive('setAttribute')->andReturnSelf()->shouldReceive('startSpan')->andReturn(Mockery::mock('Span')->shouldReceive('end')->getMock())->getMock());
+            App::instance('otel.tracer', $tracer);
+        }
+
+        $user = DummyUser::create(['name' => 'Subject']);
+        $uuid = (string) \Illuminate\Support\Str::uuid();
+
+        $job = new WriteEventLogJob(
+            event: 'test.event',
+            subjectType: $user::class,
+            subjectId: $user->id,
+            correlationId: 'corr-id',
+            causerId: $uuid,
+            causerType: 'user'
+        );
+
+        $job->handle();
+
+        $log = EventLog::where('event', 'test.event')->first();
+        $this->assertNotNull($log);
+        $this->assertEquals($uuid, $log->causer_id);
+    }
 }
