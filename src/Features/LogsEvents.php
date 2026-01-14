@@ -46,7 +46,11 @@ trait LogsEvents
      */
     public function eventNamespace(): string
     {
-        return strtolower(class_basename($this));
+        $base = class_basename($this);
+
+        return \Illuminate\Support\Str::of($base)
+            ->snake()
+            ->lower();
     }
 
     /**
