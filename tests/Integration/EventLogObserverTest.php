@@ -84,6 +84,18 @@ class EventLogObserverTest extends TestCase
         });
     }
 
+    public function test_it_logs_force_deleted_event(): void
+    {
+        $book = DummyBook::create(['title' => 'Force Delete Book']);
+        Queue::fake();
+
+        $book->forceDelete();
+
+        Queue::assertPushed(WriteEventLogJob::class, function ($job) {
+            return $job->event === 'dummy_book.deleted';
+        });
+    }
+
     public function test_it_respects_should_log_event(): void
     {
         $model = new class extends DummyUser {

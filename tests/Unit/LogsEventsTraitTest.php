@@ -35,6 +35,35 @@ class LogsEventsTraitTest extends UnitTestCase
         };
         $this->assertSame([], $model->eventRelations('created'));
     }
+
+    public function test_it_can_return_custom_relations(): void
+    {
+        $relatedModel = new class extends Model {};
+        $model = new class($relatedModel) extends Model {
+            use LogsEvents;
+            protected $related;
+            public function __construct($related = null) {
+                parent::__construct();
+                $this->related = $related;
+            }
+            public function eventRelations(string $event): array {
+                return [$this->related];
+            }
+        };
+        $this->assertSame([$relatedModel], $model->eventRelations('created'));
+    }
+
+    public function test_it_can_conditionally_log_events(): void
+    {
+        $model = new class extends Model {
+            use LogsEvents;
+            public function shouldLogEvent(string $event): bool {
+                return $event === 'allowed';
+            }
+        };
+        $this->assertTrue($model->shouldLogEvent('allowed'));
+        $this->assertFalse($model->shouldLogEvent('denied'));
+    }
 }
 
 class TestModelWithOverride extends Model {

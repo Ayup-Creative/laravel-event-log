@@ -38,7 +38,7 @@ class WriteEventLogJob implements ShouldQueue
     public function __construct(
         public string $event,
         public string $subjectType,
-        public int|string $subjectId,
+        public int|string|null $subjectId,
         public string $correlationId,
         public array $related = [],
         public int|string|null $causerId = null,

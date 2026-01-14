@@ -41,17 +41,7 @@ class EventLogger
      */
     public static function getFor(Model $model)
     {
-        return app('event')::query()
-            ->whereHas('relations', function ($q) use ($model) {
-                $q->where('related_type', $model::class)
-                    ->where('related_id', $model->getKey());
-            })
-            ->orWhere(function ($q) use ($model) {
-                $q->where('subject_type', $model::class)
-                    ->where('subject_id', $model->getKey());
-            })
-            ->latest()
-            ->get();
+        return static::queryFor($model)->get();
     }
 
 
@@ -63,20 +53,32 @@ class EventLogger
      * ordered by the most recent events first.
      *
      * @param  Model  $model
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
      */
     public static function getForPaginated(Model $model)
     {
+        return static::queryFor($model)->paginate();
+    }
+
+    /**
+     * Get the base query for finding events related to a model.
+     *
+     * @param  Model  $model
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    protected static function queryFor(Model $model)
+    {
         return app('event')::query()
-            ->whereHas('relations', function ($q) use ($model) {
-                $q->where('related_type', $model::class)
-                    ->where('related_id', $model->getKey());
+            ->where(function ($q) use ($model) {
+                $q->whereHas('relations', function ($q) use ($model) {
+                    $q->where('related_type', $model::class)
+                        ->where('related_id', $model->getKey());
+                })
+                ->orWhere(function ($q) use ($model) {
+                    $q->where('subject_type', $model::class)
+                        ->where('subject_id', $model->getKey());
+                });
             })
-            ->orWhere(function ($q) use ($model) {
-                $q->where('subject_type', $model::class)
-                    ->where('subject_id', $model->getKey());
-            })
-            ->latest()
-            ->paginate();
+            ->latest();
     }
 }

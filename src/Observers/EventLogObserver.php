@@ -13,6 +13,13 @@ use Illuminate\Database\Eloquent\Model;
 class EventLogObserver
 {
     /**
+     * Cache for checking if a class uses the LogsEvents trait.
+     *
+     * @var array<string, bool>
+     */
+    protected static array $hasTraitCache = [];
+
+    /**
      * Handle the Model "created" event.
      *
      * @param  Model  $model
@@ -70,8 +77,13 @@ class EventLogObserver
      */
     protected function log(string $action, Model $model): void
     {
-        // Safety check to ensure the model actually uses the LogsEvents trait.
-        if (!in_array(LogsEvents::class, class_uses_recursive($model))) {
+        $class = get_class($model);
+
+        if (!isset(static::$hasTraitCache[$class])) {
+            static::$hasTraitCache[$class] = in_array(LogsEvents::class, class_uses_recursive($model));
+        }
+
+        if (!static::$hasTraitCache[$class]) {
             return;
         }
 

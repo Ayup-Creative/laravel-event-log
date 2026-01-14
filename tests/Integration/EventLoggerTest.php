@@ -28,6 +28,29 @@ class EventLoggerTest extends TestCase
         Queue::assertPushed(WriteEventLogJob::class);
     }
 
+    public function test_it_supports_custom_causer_type(): void
+    {
+        $subject = DummyBook::create(['title' => 'Test Book']);
+        
+        EventLogger::log('test.event', $subject, [], 'webhook');
+        
+        Queue::assertPushed(WriteEventLogJob::class, function ($job) {
+            return $job->causerType === 'webhook';
+        });
+    }
+
+    public function test_it_supports_related_models(): void
+    {
+        $subject = DummyBook::create(['title' => 'Test Book']);
+        $related = DummyUser::create(['name' => 'Related User']);
+        
+        EventLogger::log('test.event', $subject, [$related]);
+        
+        Queue::assertPushed(WriteEventLogJob::class, function ($job) use ($related) {
+            return count($job->related) === 1 && $job->related[0]['id'] === $related->id;
+        });
+    }
+
     public function test_get_for_returns_events_where_model_is_subject(): void
     {
         $user = DummyUser::create(['name' => 'Subject User']);
@@ -104,5 +127,35 @@ class EventLoggerTest extends TestCase
 
         $this->assertCount(2, $events);
         $this->assertEquals($log2->id, $events->first()->id);
+    }
+
+    public function test_get_for_paginated_returns_paginated_results(): void
+    {
+        $user = DummyUser::create(['name' => 'Paginated User']);
+        
+        EventLog::create([
+            'event' => 'user.updated',
+            'subject_type' => $user::class,
+            'subject_id' => $user->id,
+            'correlation_id' => 'corr-5',
+            'idempotency_key' => 'key-5',
+        ]);
+
+        $events = EventLogger::getForPaginated($user);
+
+        $this->assertInstanceOf(\Illuminate\Contracts\Pagination\LengthAwarePaginator::class, $events);
+        $this->assertCount(1, $events->items());
+    }
+
+    public function test_it_handles_models_without_ids_gracefully(): void
+    {
+        $subject = new DummyBook();
+        // ID is null
+        
+        EventLogger::log('test.event', $subject);
+        
+        Queue::assertPushed(WriteEventLogJob::class, function ($job) {
+            return $job->subjectId === null;
+        });
     }
 }
