@@ -36,7 +36,7 @@ return new class extends Migration
 
         Schema::create('event_log_relations', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignId('event_log_id')->constrained()->cascadeOnDelete();
+            $table->uuid('event_log_id');
             $table->morphs('related'); // organisation, mandate, user, etc
         });
     }
