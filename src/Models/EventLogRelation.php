@@ -3,6 +3,8 @@
 namespace AyupCreative\EventLog\Models;
 
 use AyupCreative\EventLog\Contracts\EventRelationModel;
+use AyupCreative\EventLog\Observers\UuidObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -12,8 +14,15 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  *
  * Represents a link between an EventLog and a related model.
  */
+#[ObservedBy(UuidObserver::class)]
 class EventLogRelation extends Model implements EventRelationModel
 {
+    /** @var string The primary key type. */
+    protected $keyType = 'string';
+
+    /** @var bool Defines whether the ID column is incrementing. */
+    public $incrementing = false;
+
     /** @var bool Indicates if the model should be timestamped. */
     public $timestamps = false;
 

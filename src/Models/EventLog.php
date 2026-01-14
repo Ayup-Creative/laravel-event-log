@@ -3,19 +3,31 @@
 namespace AyupCreative\EventLog\Models;
 
 use AyupCreative\EventLog\Contracts\EventModel;
+use AyupCreative\EventLog\Observers\UuidObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
+use Illuminate\Support\Collection;
 
 /**
  * Class EventLog
  *
  * The main model representing an immutable fact in the system.
+ *
+ * @property Collection $relations
  */
+#[ObservedBy(UuidObserver::class)]
 class EventLog extends Model implements EventModel
 {
+    /** @var string The primary key type. */
+    protected $keyType = 'string';
+
+    /** @var bool Defines whether the ID column is incrementing. */
+    public $incrementing = false;
+
     /** @var array<string> The attributes that aren't mass assignable. */
     protected $guarded = [];
 

@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('event_logs', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
 
             $table->string('event');
 
@@ -31,11 +31,11 @@ return new class extends Migration
 
             $table->string('idempotency_key')->unique();
 
-            $table->timestamps();
+            $table->timestamps(precision: 3);
         });
 
         Schema::create('event_log_relations', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->foreignId('event_log_id')->constrained()->cascadeOnDelete();
             $table->morphs('related'); // organisation, mandate, user, etc
         });

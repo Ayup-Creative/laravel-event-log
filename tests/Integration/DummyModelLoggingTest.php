@@ -19,7 +19,7 @@ class DummyModelLoggingTest extends TestCase
         $user = DummyUser::create(['name' => 'John Doe']);
 
         Queue::assertPushed(WriteEventLogJob::class, function ($job) {
-            return $job->event === 'dummyuser.created';
+            return $job->event === 'dummy_user.created';
         });
     }
 
@@ -39,7 +39,7 @@ class DummyModelLoggingTest extends TestCase
         event_log('book.checked_out', $book, [$user]);
 
         Queue::assertPushed(WriteEventLogJob::class, function ($job) use ($book) {
-            return $job->event === 'dummybook.updated' && $job->subjectId === $book->id;
+            return $job->event === 'dummy_book.updated' && $job->subjectId === $book->id;
         });
 
         Queue::assertPushed(WriteEventLogJob::class, function ($job) use ($book, $user) {

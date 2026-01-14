@@ -29,13 +29,13 @@ if (! function_exists('event_log')) {
             event: $event,
             subjectType: $subject::class,
             subjectId: $subject->getKey(),
+            correlationId: EventContext::correlationId(),
             related: collect($related)->map(fn ($m) => [
                 'type' => $m::class,
                 'id' => $m->getKey(),
             ])->all(),
             causerId: auth()->id(),
             causerType: $causerType,
-            correlationId: EventContext::correlationId(),
             transactionId: EventContext::transactionId()
         )->onQueue(config('event-log.queue', 'event-log'));
     }

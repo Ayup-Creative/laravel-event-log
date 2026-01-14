@@ -31,7 +31,7 @@ class EventLogObserverTest extends TestCase
         $user = DummyUser::create(['name' => 'Created Via Lifecycle']);
 
         Queue::assertPushed(WriteEventLogJob::class, function ($job) {
-            return $job->event === 'dummyuser.created';
+            return $job->event === 'dummy_user.created';
         });
     }
 
@@ -44,7 +44,7 @@ class EventLogObserverTest extends TestCase
         $user->save();
 
         Queue::assertPushed(WriteEventLogJob::class, function ($job) {
-            return $job->event === 'dummyuser.updated';
+            return $job->event === 'dummy_user.updated';
         });
     }
 
@@ -67,7 +67,7 @@ class EventLogObserverTest extends TestCase
         $user->delete();
 
         Queue::assertPushed(WriteEventLogJob::class, function ($job) {
-            return $job->event === 'dummyuser.deleted';
+            return $job->event === 'dummy_user.deleted';
         });
     }
 
@@ -80,7 +80,7 @@ class EventLogObserverTest extends TestCase
         $book->restore();
 
         Queue::assertPushed(WriteEventLogJob::class, function ($job) {
-            return $job->event === 'dummybook.restored';
+            return $job->event === 'dummy_book.restored';
         });
     }
 

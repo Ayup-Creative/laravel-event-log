@@ -11,7 +11,7 @@ class LogsEventsTraitTest extends UnitTestCase
     public function test_it_provides_default_event_namespace(): void
     {
         $model = new DefaultNamespaceModel();
-        $this->assertSame('defaultnamespacemodel', $model->eventNamespace());
+        $this->assertSame('default_namespace_model', $model->eventNamespace());
     }
 
     public function test_it_can_override_event_namespace(): void

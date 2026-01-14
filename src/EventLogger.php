@@ -53,4 +53,30 @@ class EventLogger
             ->latest()
             ->get();
     }
+
+
+
+    /**
+     * Retrieve a unified timeline of events for a given model.
+     *
+     * Returns events where the model is either the subject or a related model,
+     * ordered by the most recent events first.
+     *
+     * @param  Model  $model
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public static function getForPaginated(Model $model)
+    {
+        return app('event')::query()
+            ->whereHas('relations', function ($q) use ($model) {
+                $q->where('related_type', $model::class)
+                    ->where('related_id', $model->getKey());
+            })
+            ->orWhere(function ($q) use ($model) {
+                $q->where('subject_type', $model::class)
+                    ->where('subject_id', $model->getKey());
+            })
+            ->latest()
+            ->paginate();
+    }
 }
