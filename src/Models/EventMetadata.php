@@ -3,6 +3,7 @@
 namespace AyupCreative\EventLog\Models;
 
 use AyupCreative\EventLog\Observers\UuidObserver;
+use AyupCreative\EventLog\Support\MetadataCollection;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
@@ -43,6 +44,17 @@ class EventMetadata extends Model
     protected $casts = [
         'value' => 'json',
     ];
+
+    /**
+     * Create a new Eloquent Collection instance.
+     *
+     * @param array<int, Model> $models
+     * @return MetadataCollection
+     */
+    public function newCollection(array $models = []): MetadataCollection
+    {
+        return new MetadataCollection($models);
+    }
 
     /**
      * Retrieve the event log that the metadata belongs to.

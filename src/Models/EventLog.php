@@ -5,6 +5,7 @@ namespace AyupCreative\EventLog\Models;
 use AyupCreative\EventLog\Contracts\EventModel;
 use AyupCreative\EventLog\Observers\UuidObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -17,6 +18,8 @@ use Illuminate\Support\Collection;
  *
  * The main model representing an immutable fact in the system.
  *
+ * @property \AyupCreative\EventLog\Support\MetadataCollection $metadata
+ * @property \AyupCreative\EventLog\Support\MetadataCollection $meta
  * @property Collection $relations
  */
 #[ObservedBy(UuidObserver::class)]
@@ -74,6 +77,16 @@ class EventLog extends Model implements EventModel
     public function metadata(): HasMany
     {
         return $this->hasMany(EventMetadata::class, 'event_id');
+    }
+
+    /**
+     * Shorthand for metadata.
+     *
+     * @return Attribute
+     */
+    protected function meta(): Attribute
+    {
+        return Attribute::get(fn () => $this->metadata);
     }
 
     /**
