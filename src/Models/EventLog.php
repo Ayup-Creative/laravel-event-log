@@ -67,6 +67,16 @@ class EventLog extends Model implements EventModel
     }
 
     /**
+     * Retrieve the metadata associated with the event log.
+     *
+     * @return HasMany
+     */
+    public function metadata(): HasMany
+    {
+        return $this->hasMany(EventMetadata::class, 'event_id');
+    }
+
+    /**
      * Get the additional relational links for this event.
      *
      * @return HasMany

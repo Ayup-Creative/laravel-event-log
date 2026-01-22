@@ -65,4 +65,17 @@ trait LogsEvents
     {
         return [];
     }
+
+    /**
+     * Get the metadata to attach to automatic lifecycle events.
+     *
+     * Override this to attach additional data to every lifecycle event of this model.
+     *
+     * @param  string  $event  The dot-notation event name.
+     * @return array
+     */
+    public function eventMetadata(string $event): array
+    {
+        return [];
+    }
 }

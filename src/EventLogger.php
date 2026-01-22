@@ -19,15 +19,17 @@ class EventLogger
      * @param  Model   $subject  The primary model.
      * @param  array   $related  Optional related models.
      * @param  string|null  $causerType  Optional causer type override.
+     * @param  array   $metadata  Additional metadata for the event.
      * @return void
      */
     public static function log(
         string $event,
         Model $subject,
         array $related = [],
-        ?string $causerType = null
+        ?string $causerType = null,
+        array $metadata = []
     ): void {
-        event_log($event, $subject, $related, $causerType);
+        event_log($event, $subject, $related, $causerType, $metadata);
     }
 
     /**

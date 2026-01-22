@@ -16,16 +16,16 @@ class EventLogHelperTest extends TestCase
     public function test_event_log_dispatches_job(): void
     {
         Queue::fake();
-        
+
         $subject = new \AyupCreative\EventLog\Tests\Models\DummyBook();
         $subject->id = 123;
-        
+
         $related = new \AyupCreative\EventLog\Tests\Models\DummyUser();
         $related->id = 456;
 
         EventContext::setCorrelationId('test-corr');
-        
-        event_log('test.event', $subject, [$related]);
+
+        event_log('test.event', $subject, [$related], null, ['foo' => 'bar']);
 
         Queue::assertPushed(WriteEventLogJob::class, function ($job) use ($subject, $related) {
             return $job->event === 'test.event' &&
@@ -33,6 +33,7 @@ class EventLogHelperTest extends TestCase
                    $job->subjectId === 123 &&
                    $job->correlationId === 'test-corr' &&
                    count($job->related) === 1 &&
+                   $job->metadata === ['foo' => 'bar'] &&
                    $job->queue === 'event-log';
         });
     }

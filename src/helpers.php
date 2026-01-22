@@ -23,7 +23,8 @@ if (! function_exists('event_log')) {
         string $event,
         Model $subject,
         array $related = [],
-        ?string $causerType = null
+        ?string $causerType = null,
+        array $metadata = []
     ): void {
         WriteEventLogJob::dispatch(
             event: $event,
@@ -36,7 +37,8 @@ if (! function_exists('event_log')) {
             ])->all(),
             causerId: auth()->id(),
             causerType: $causerType,
-            transactionId: EventContext::transactionId()
+            transactionId: EventContext::transactionId(),
+            metadata: $metadata
         )->onQueue(config('event-log.queue', 'event-log'));
     }
 }

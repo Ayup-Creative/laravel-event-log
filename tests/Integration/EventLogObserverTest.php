@@ -140,4 +140,21 @@ class EventLogObserverTest extends TestCase
         
         Queue::assertPushed(WriteEventLogJob::class, 4);
     }
+
+    public function test_it_includes_automatic_metadata(): void
+    {
+        $model = new class extends DummyUser {
+            public function eventMetadata(string $event): array {
+                return ['auto' => 'metadata'];
+            }
+        };
+        $model->id = 1;
+
+        $observer = new EventLogObserver();
+        $observer->created($model);
+
+        Queue::assertPushed(WriteEventLogJob::class, function ($job) {
+            return $job->metadata === ['auto' => 'metadata'];
+        });
+    }
 }

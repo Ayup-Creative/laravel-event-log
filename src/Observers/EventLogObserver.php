@@ -97,7 +97,8 @@ class EventLogObserver
         event_log(
             event: $event,
             subject: $model,
-            related: $model->eventRelations($event)
+            related: $model->eventRelations($event),
+            metadata: $model->eventMetadata($event)
         );
     }
 }

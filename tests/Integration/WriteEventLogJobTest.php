@@ -76,7 +76,7 @@ class WriteEventLogJobTest extends TestCase
         Mockery::mock('alias:OpenTelemetry\API\Trace\TracerProvider');
 
         $user = DummyUser::create(['name' => 'Test']);
-        
+
         $tracer = Mockery::mock('Tracer');
         $spanBuilder = Mockery::mock('SpanBuilder');
         $span = Mockery::mock('Span');
@@ -86,7 +86,7 @@ class WriteEventLogJobTest extends TestCase
         $tracer->shouldReceive('spanBuilder')
             ->with('test.event')
             ->andReturn($spanBuilder);
-        
+
         $spanBuilder->shouldReceive('setAttribute')->andReturnSelf();
         $spanBuilder->shouldReceive('startSpan')->andReturn($span);
         $span->shouldReceive('end')->once();
@@ -157,5 +157,37 @@ class WriteEventLogJobTest extends TestCase
         $log = EventLog::where('event', 'test.event')->first();
         $this->assertNotNull($log);
         $this->assertEquals($uuid, $log->causer_id);
+    }
+
+    public function test_it_persists_metadata(): void
+    {
+        // Ensure OTEL doesn't break if class exists but tracer doesn't
+        if (class_exists('OpenTelemetry\API\Trace\TracerProvider')) {
+            $tracer = Mockery::mock('Tracer');
+            $tracer->shouldReceive('spanBuilder')->andReturn(Mockery::mock('SpanBuilder')->shouldReceive('setAttribute')->andReturnSelf()->shouldReceive('startSpan')->andReturn(Mockery::mock('Span')->shouldReceive('end')->getMock())->getMock());
+            App::instance('otel.tracer', $tracer);
+        }
+
+        $user = DummyUser::create(['name' => 'Subject']);
+
+        $job = new WriteEventLogJob(
+            event: 'test.event',
+            subjectType: $user::class,
+            subjectId: $user->id,
+            correlationId: 'corr-id',
+            metadata: [
+                'error_reason' => 'API Timeout',
+                'retry_count' => 3,
+                'details' => ['foo' => 'bar']
+            ]
+        );
+
+        $job->handle();
+
+        $log = EventLog::latest()->first();
+        $this->assertCount(3, $log->metadata);
+        $this->assertEquals('API Timeout', $log->metadata->where('key', 'error_reason')->first()->value);
+        $this->assertEquals(3, $log->metadata->where('key', 'retry_count')->first()->value);
+        $this->assertEquals(['foo' => 'bar'], $log->metadata->where('key', 'details')->first()->value);
     }
 }

@@ -22,18 +22,18 @@ class EventLoggerTest extends TestCase
     {
         $subject = new DummyBook();
         $subject->id = 1;
-        
+
         EventLogger::log('test.event', $subject);
-        
+
         Queue::assertPushed(WriteEventLogJob::class);
     }
 
     public function test_it_supports_custom_causer_type(): void
     {
         $subject = DummyBook::create(['title' => 'Test Book']);
-        
+
         EventLogger::log('test.event', $subject, [], 'webhook');
-        
+
         Queue::assertPushed(WriteEventLogJob::class, function ($job) {
             return $job->causerType === 'webhook';
         });
@@ -43,9 +43,9 @@ class EventLoggerTest extends TestCase
     {
         $subject = DummyBook::create(['title' => 'Test Book']);
         $related = DummyUser::create(['name' => 'Related User']);
-        
+
         EventLogger::log('test.event', $subject, [$related]);
-        
+
         Queue::assertPushed(WriteEventLogJob::class, function ($job) use ($related) {
             return count($job->related) === 1 && $job->related[0]['id'] === $related->id;
         });
@@ -54,7 +54,7 @@ class EventLoggerTest extends TestCase
     public function test_get_for_returns_events_where_model_is_subject(): void
     {
         $user = DummyUser::create(['name' => 'Subject User']);
-        
+
         $log = EventLog::create([
             'event' => 'user.created',
             'subject_type' => $user::class,
@@ -73,7 +73,7 @@ class EventLoggerTest extends TestCase
     {
         $user = DummyUser::create(['name' => 'Related User']);
         $book = DummyBook::create(['title' => 'Related Book']);
-        
+
         $log = EventLog::create([
             'event' => 'book.created',
             'subject_type' => $book::class,
@@ -96,7 +96,7 @@ class EventLoggerTest extends TestCase
     public function test_get_for_returns_combined_results_latest_first(): void
     {
         $user = DummyUser::create(['name' => 'Multi User']);
-        
+
         // Subject event
         $log1 = EventLog::create([
             'event' => 'user.updated',
@@ -132,7 +132,7 @@ class EventLoggerTest extends TestCase
     public function test_get_for_paginated_returns_paginated_results(): void
     {
         $user = DummyUser::create(['name' => 'Paginated User']);
-        
+
         EventLog::create([
             'event' => 'user.updated',
             'subject_type' => $user::class,
@@ -156,6 +156,17 @@ class EventLoggerTest extends TestCase
         
         Queue::assertPushed(WriteEventLogJob::class, function ($job) {
             return $job->subjectId === null;
+        });
+    }
+
+    public function test_it_supports_metadata(): void
+    {
+        $subject = DummyBook::create(['title' => 'Test Book']);
+        
+        EventLogger::log('test.event', $subject, [], null, ['error_reason' => 'API Timeout']);
+        
+        Queue::assertPushed(WriteEventLogJob::class, function ($job) {
+            return $job->metadata === ['error_reason' => 'API Timeout'];
         });
     }
 }

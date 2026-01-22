@@ -34,6 +34,7 @@ class WriteEventLogJob implements ShouldQueue
      * @param  int|string|null  $causerId  The ID of the user who caused the event.
      * @param  string|null  $causerType  The type of causer.
      * @param  string|null  $transactionId  Group ID for events in the same transaction.
+     * @param  array   $metadata  Additional metadata for the event.
      */
     public function __construct(
         public string $event,
@@ -43,7 +44,8 @@ class WriteEventLogJob implements ShouldQueue
         public array $related = [],
         public int|string|null $causerId = null,
         public ?string $causerType = null,
-        public ?string $transactionId = null
+        public ?string $transactionId = null,
+        public array $metadata = []
     ) {
         $this->queue = config('event-log.queue', 'event-log');
     }
@@ -88,6 +90,13 @@ class WriteEventLogJob implements ShouldQueue
                 $log->relations()->create([
                     'related_type' => $relation['type'],
                     'related_id' => $relation['id'],
+                ]);
+            }
+
+            foreach ($this->metadata as $key => $value) {
+                $log->metadata()->create([
+                    'key' => $key,
+                    'value' => $value,
                 ]);
             }
 
