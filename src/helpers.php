@@ -1,5 +1,6 @@
 <?php
 
+use AyupCreative\EventLog\EventLogger;
 use AyupCreative\EventLog\Jobs\WriteEventLogJob;
 use AyupCreative\EventLog\Support\EventContext;
 use Illuminate\Database\Eloquent\Model;
@@ -17,6 +18,7 @@ if (! function_exists('event_log')) {
      * @param  Model   $subject  The primary model this event is about.
      * @param  array<Model>  $related  Additional models related to this event.
      * @param  string|null  $causerType  Optional causer type override ('user', 'system', 'job', 'webhook').
+     * @param  array  $metadata  Additional metadata for the event.
      * @return void
      */
     function event_log(
@@ -35,10 +37,10 @@ if (! function_exists('event_log')) {
                 'type' => $m::class,
                 'id' => $m->getKey(),
             ])->all(),
-            causerId: auth()->id(),
-            causerType: $causerType,
+            causerId: app('event-log')->resolveActor(),
+            causerType: $causerType ?? app('event-log')->resolveCauserType(),
             transactionId: EventContext::transactionId(),
             metadata: $metadata
-        )->onQueue(config('event-log.queue', 'event-log'));
+        )->onQueue(config('event-log.queue'));
     }
 }

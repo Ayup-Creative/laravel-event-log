@@ -33,8 +33,7 @@ class EventLogHelperTest extends TestCase
                    $job->subjectId === 123 &&
                    $job->correlationId === 'test-corr' &&
                    count($job->related) === 1 &&
-                   $job->metadata === ['foo' => 'bar'] &&
-                   $job->queue === 'event-log';
+                   $job->metadata === ['foo' => 'bar'];
         });
     }
 

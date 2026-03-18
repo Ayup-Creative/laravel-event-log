@@ -3,6 +3,7 @@
 namespace AyupCreative\EventLog\Tests\Integration;
 
 use AyupCreative\EventLog\EventLogger;
+use AyupCreative\EventLog\Facades\EventLog as EventLogFacade;
 use AyupCreative\EventLog\Models\EventLog;
 use AyupCreative\EventLog\Tests\Models\DummyBook;
 use AyupCreative\EventLog\Tests\Models\DummyUser;
@@ -23,7 +24,7 @@ class EventLoggerTest extends TestCase
         $subject = new DummyBook();
         $subject->id = 1;
 
-        EventLogger::log('test.event', $subject);
+        EventLogFacade::log('test.event', $subject);
 
         Queue::assertPushed(WriteEventLogJob::class);
     }
@@ -32,7 +33,7 @@ class EventLoggerTest extends TestCase
     {
         $subject = DummyBook::create(['title' => 'Test Book']);
 
-        EventLogger::log('test.event', $subject, [], 'webhook');
+        EventLogFacade::log('test.event', $subject, [], 'webhook');
 
         Queue::assertPushed(WriteEventLogJob::class, function ($job) {
             return $job->causerType === 'webhook';
@@ -44,7 +45,7 @@ class EventLoggerTest extends TestCase
         $subject = DummyBook::create(['title' => 'Test Book']);
         $related = DummyUser::create(['name' => 'Related User']);
 
-        EventLogger::log('test.event', $subject, [$related]);
+        EventLogFacade::log('test.event', $subject, [$related]);
 
         Queue::assertPushed(WriteEventLogJob::class, function ($job) use ($related) {
             return count($job->related) === 1 && $job->related[0]['id'] === $related->id;
@@ -63,7 +64,7 @@ class EventLoggerTest extends TestCase
             'idempotency_key' => 'key-1',
         ]);
 
-        $events = EventLogger::getFor($user);
+        $events = EventLogFacade::getFor($user);
 
         $this->assertCount(1, $events);
         $this->assertTrue($events->first()->is($log));
@@ -87,7 +88,7 @@ class EventLoggerTest extends TestCase
             'related_id' => $user->id,
         ]);
 
-        $events = EventLogger::getFor($user);
+        $events = EventLogFacade::getFor($user);
 
         $this->assertCount(1, $events);
         $this->assertTrue($events->first()->is($log));
@@ -123,7 +124,7 @@ class EventLoggerTest extends TestCase
             'related_id' => $user->id,
         ]);
 
-        $events = EventLogger::getFor($user);
+        $events = EventLogFacade::getFor($user);
 
         $this->assertCount(2, $events);
         $this->assertEquals($log2->id, $events->first()->id);
@@ -141,7 +142,7 @@ class EventLoggerTest extends TestCase
             'idempotency_key' => 'key-5',
         ]);
 
-        $events = EventLogger::getForPaginated($user);
+        $events = EventLogFacade::getForPaginated($user);
 
         $this->assertInstanceOf(\Illuminate\Contracts\Pagination\LengthAwarePaginator::class, $events);
         $this->assertCount(1, $events->items());
@@ -151,9 +152,9 @@ class EventLoggerTest extends TestCase
     {
         $subject = new DummyBook();
         // ID is null
-        
-        EventLogger::log('test.event', $subject);
-        
+
+        EventLogFacade::log('test.event', $subject);
+
         Queue::assertPushed(WriteEventLogJob::class, function ($job) {
             return $job->subjectId === null;
         });
@@ -162,11 +163,43 @@ class EventLoggerTest extends TestCase
     public function test_it_supports_metadata(): void
     {
         $subject = DummyBook::create(['title' => 'Test Book']);
-        
-        EventLogger::log('test.event', $subject, [], null, ['error_reason' => 'API Timeout']);
-        
+
+        EventLogFacade::log('test.event', $subject, [], null, ['error_reason' => 'API Timeout']);
+
         Queue::assertPushed(WriteEventLogJob::class, function ($job) {
             return $job->metadata === ['error_reason' => 'API Timeout'];
         });
+    }
+
+    public function test_it_uses_custom_actor_resolver(): void
+    {
+        $subject = DummyBook::create(['title' => 'Test Book']);
+
+        EventLogFacade::resolveActorWith(fn() => 'custom-actor-id');
+
+        EventLogFacade::log('test.event', $subject);
+
+        Queue::assertPushed(WriteEventLogJob::class, function ($job) {
+            return $job->causerId === 'custom-actor-id';
+        });
+
+        // Reset for other tests
+        EventLogFacade::resolveActorWith(fn() => auth()->id());
+    }
+
+    public function test_it_uses_custom_causer_type_resolver(): void
+    {
+        $subject = DummyBook::create(['title' => 'Test Book']);
+
+        EventLogFacade::determineCauserTypeWith(fn() => 'cron');
+
+        EventLogFacade::log('test.event', $subject);
+
+        Queue::assertPushed(WriteEventLogJob::class, function ($job) {
+            return $job->causerType === 'cron';
+        });
+
+        // Reset for other tests
+        EventLogFacade::determineCauserTypeWith(fn() => app()->runningInConsole() ? 'worker' : 'user');
     }
 }

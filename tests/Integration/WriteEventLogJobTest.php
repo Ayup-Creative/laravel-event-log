@@ -101,7 +101,7 @@ class WriteEventLogJobTest extends TestCase
         $job->handle();
     }
 
-    public function test_it_logs_with_related_models_and_system_causer(): void
+    public function test_it_logs_with_related_models_and_default_causer_type(): void
     {
         // Ensure OTEL doesn't break if class exists but tracer doesn't
         if (class_exists('OpenTelemetry\API\Trace\TracerProvider')) {
@@ -118,6 +118,7 @@ class WriteEventLogJobTest extends TestCase
             subjectType: $user::class,
             subjectId: $user->id,
             correlationId: 'corr-id',
+            causerType: 'system',
             related: [
                 ['type' => $related::class, 'id' => $related->id]
             ]

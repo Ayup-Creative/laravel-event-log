@@ -34,5 +34,5 @@ return [
     | zero impact on the main application flow.
     |
     */
-    'queue' => 'event-log',
+    'queue' => env('EVENT_LOG_QUEUE', 'default'),
 ];

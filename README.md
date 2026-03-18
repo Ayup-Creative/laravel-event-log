@@ -85,11 +85,19 @@ event_log('organisation.created', $organisation);
 
 // Event with related models
 event_log('user.enrolled', $user, [$organisation, $course]);
+
+// Event with additional metadata (e.g., tracking reasons, API errors)
+event_log('payment.failed', $payment, metadata: [
+    'error_reason' => 'Insufficient funds',
+    'provider' => 'Stripe'
+]);
 ```
 
 -   **Event Name**: A human-readable dot-notation string.
--   **Subject**: The primary Eloquent model the event is about.
--   **Related**: (Optional) An array of additional Eloquent models linked to this event.
+    -   **Subject**: The primary Eloquent model the event is about.
+    -   **Related**: (Optional) An array of additional Eloquent models linked to this event.
+    -   **Causer Type**: (Optional) Explicitly set the type of actor ('user', 'system', 'worker', 'cron').
+    -   **Metadata**: (Optional) Key-value pairs of additional context for the event.
 
 ### 2. Automatic Lifecycle Logging
 
@@ -131,10 +139,42 @@ class Mandate extends Model
     {
         return [$this->organisation];
     }
+
+    // Include automatic metadata in lifecycle logs
+    public function eventMetadata(string $event): array
+    {
+        return ['type' => $this->type];
+    }
 }
 ```
 
-### 3. Grouping Events with Transactions
+### 3. Custom Actor & Causer Resolution
+
+By default, the package uses `auth()->id()` to identify the current user and determines if the action was triggered by a 'user' (web request) or 'worker' (CLI).
+
+You can customize this behavior using the `EventLog` Facade in your `AppServiceProvider`:
+
+```php
+use AyupCreative\EventLog\Facades\EventLog;
+
+public function boot()
+{
+    // Resolve the current actor ID (e.g., from a custom auth system)
+    EventLog::resolveActorWith(function ($app) {
+        return auth('api')->id();
+    });
+
+    // Determine the type of causer based on context
+    EventLog::determineCauserTypeWith(function ($app) {
+        if ($app->runningInConsole()) {
+            return 'cron';
+        }
+        return 'user';
+    });
+}
+```
+
+### 4. Grouping Events with Transactions
 
 Use the `WithEventTransaction` wrapper to group multiple events occurring within a single database transaction. This assigns a shared `transaction_id` to all events logged inside the closure.
 
@@ -150,7 +190,7 @@ WithEventTransaction::run(function () use ($user, $org) {
 });
 ```
 
-### 4. Correlation IDs & Middleware
+### 5. Correlation IDs & Middleware
 
 Correlation IDs allow you to trace a logical action across multiple services and background jobs.
 
@@ -164,10 +204,8 @@ Add the `EventCorrelationMiddleware` to your global or web/api middleware stack 
 })
 ```
 
-It looks for an `X-Correlation-ID` header in the request and ensures the same ID is returned in the response headers.
-
 #### Propagation via HTTP Client
-The package adds a macro to the Laravel HTTP client to easily propagate the correlation ID to internal services:
+The package adds a macro to the Laravel HTTP client to easily propagate the correlation ID:
 
 ```php
 use Illuminate\Support\Facades\Http;
@@ -179,24 +217,34 @@ Http::withEventContext()->post('https://api.other-service.com/data');
 
 ## Querying Events
 
-You can retrieve a unified timeline of events for any model using the `EventLogger` class. This returns events where the model is either the **subject** or a **related** model.
+You can retrieve a unified timeline of events for any model using the `EventLog` Facade. This returns events where the model is either the **subject** or a **related** model.
 
 ```php
-use AyupCreative\EventLog\EventLogger;
+use AyupCreative\EventLog\Facades\EventLog;
 
-$events = EventLogger::getFor($organisation);
+// Get all events for a model
+$events = EventLog::getFor($organisation);
 
 foreach ($events as $log) {
     echo "{$log->event} caused by {$log->causerLabel()}";
+    
+    // Access metadata
+    echo $log->metadata->get('error_reason');
 }
+
+// Paginated version
+$paginatedEvents = EventLog::getForPaginated($organisation);
 ```
 
 ### Causer Labels
-The `EventLog` model provides a `causerLabel()` helper to identify who or what triggered the event:
+The `EventLog` model provides a `causerLabel()` helper to identify the actor:
 -   `user`: Returns the user's name (if authenticated).
 -   `system`: Internal system action.
 -   `job`: Action triggered by a background job.
 -   `webhook`: Action triggered by an external service.
+
+### Metadata Helper
+The `metadata` relationship returns a collection with a convenient `get()` method to retrieve values by key.
 
 ---
 

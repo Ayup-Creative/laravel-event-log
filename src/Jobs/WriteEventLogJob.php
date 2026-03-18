@@ -80,8 +80,7 @@ class WriteEventLogJob implements ShouldQueue
                 'subject_type' => $this->subjectType,
                 'subject_id' => $this->subjectId,
                 'causer_id' => $this->causerId,
-                'causer_type' => $this->causerType
-                    ?? ($this->causerId ? 'user' : 'system'),
+                'causer_type' => $this->causerType,
                 'correlation_id' => $this->correlationId,
                 'transaction_id' => $this->transactionId,
             ]);

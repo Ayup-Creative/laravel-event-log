@@ -4,6 +4,7 @@ namespace AyupCreative\EventLog;
 
 use AyupCreative\EventLog\Contracts\EventModel;
 use AyupCreative\EventLog\Contracts\EventRelationModel;
+use AyupCreative\EventLog\EventLogger;
 use AyupCreative\EventLog\Models\EventLog;
 use AyupCreative\EventLog\Support\EventContext;
 use Illuminate\Support\Facades\Http;
@@ -25,11 +26,17 @@ class EventLogServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__ . '/../config/event-log.php', 'event-log');
 
+        // Bind the logger as a singleton.
+        $this->app->singleton(EventLogger::class, function ($app) {
+            return new EventLogger();
+        });
+
         // Bind models to the container to allow for easy overrides via config.
         $this->app->bind(EventModel::class, config('event-log.event_model'));
         $this->app->bind(EventRelationModel::class, config('event-log.relation_model'));
 
         // Register aliases for easier access.
+        $this->app->alias(EventLogger::class, 'event-log');
         $this->app->alias(EventModel::class, 'event');
         $this->app->alias(EventRelationModel::class, 'event-relation');
 
