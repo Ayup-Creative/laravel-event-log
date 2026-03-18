@@ -213,6 +213,60 @@ use Illuminate\Support\Facades\Http;
 Http::withEventContext()->post('https://api.other-service.com/data');
 ```
 
+### 6. Human-Readable Event Formatting
+
+You can map internal dot-notation event names (e.g., `user.created`) to human-readable strings (e.g., `A new user was created`). This is useful for displaying a timeline of events to end-users.
+
+#### Using the Facade (Closure-based)
+Register a formatter in your `AppServiceProvider`:
+
+```php
+use AyupCreative\EventLog\Facades\EventLog;
+
+public function boot()
+{
+    EventLog::formatEventsWith(function ($eventLog) {
+        return match ($eventLog->event) {
+            'user.created' => "User {$eventLog->subject->name} joined the platform",
+            'payment.failed' => "Payment failed: {$eventLog->meta->error_reason}",
+            default => $eventLog->event,
+        };
+    });
+}
+```
+
+#### Using a Formatter Class (Cache-friendly)
+For better performance and to keep your `AppServiceProvider` clean, you can use a dedicated class. This is also required if you want to use `php artisan config:cache`, as closures cannot be serialized.
+
+1. Create your formatter class:
+
+```php
+namespace App\Support;
+
+class MyEventFormatter
+{
+    public function __invoke($eventLog)
+    {
+        // Custom logic to return a human-readable string
+        return "Action: " . $eventLog->event;
+    }
+}
+```
+
+2. Register it in `config/event-log.php`:
+
+```php
+'event_formatter' => \App\Support\MyEventFormatter::class,
+```
+
+#### Accessing the Formatted Description
+Once a formatter is registered, you can access the human-readable string via the `description` attribute on the `EventLog` model:
+
+```php
+$eventLog = EventLog::getFor($user)->first();
+echo $eventLog->description; // "User John Doe joined the platform"
+```
+
 ---
 
 ## Querying Events
@@ -226,10 +280,10 @@ use AyupCreative\EventLog\Facades\EventLog;
 $events = EventLog::getFor($organisation);
 
 foreach ($events as $log) {
-    echo "{$log->event} caused by {$log->causerLabel()}";
+    echo "{$log->description} caused by {$log->causerLabel()}";
     
     // Access metadata
-    echo $log->metadata->get('error_reason');
+    echo $log->meta->error_reason;
 }
 
 // Paginated version
@@ -244,7 +298,13 @@ The `EventLog` model provides a `causerLabel()` helper to identify the actor:
 -   `webhook`: Action triggered by an external service.
 
 ### Metadata Helper
-The `metadata` relationship returns a collection with a convenient `get()` method to retrieve values by key.
+The `meta` attribute provides a shorthand for the metadata collection, allowing you to access values directly as properties:
+
+```php
+echo $log->meta->error_reason;
+```
+
+Alternatively, you can access the full `metadata` relationship, which returns an Eloquent collection of metadata models.
 
 ---
 

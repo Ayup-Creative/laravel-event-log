@@ -18,6 +18,9 @@ class EventLogger
     /** @var callable|null Callback to resolve the current causer type. */
     protected $causerTypeResolver = null;
 
+    /** @var callable|null Callback to format the event name. */
+    protected $eventFormatter = null;
+
     /**
      * Specify a callback to resolve the current actor ID.
      *
@@ -38,6 +41,17 @@ class EventLogger
     public function determineCauserTypeWith(callable $callback): void
     {
         $this->causerTypeResolver = $callback;
+    }
+
+    /**
+     * Specify a callback to format the event name into a human-readable string.
+     *
+     * @param  callable|string  $callback  Closure or class name of a formatter.
+     * @return void
+     */
+    public function formatEventsWith(callable|string $callback): void
+    {
+        $this->eventFormatter = $callback;
     }
 
     /**
@@ -70,6 +84,27 @@ class EventLogger
         }
 
         return 'user';
+    }
+
+    /**
+     * Format the event name into a human-readable string.
+     *
+     * @param  EventModel  $eventLog
+     * @return string
+     */
+    public function format(EventModel $eventLog): string
+    {
+        $formatter = $this->eventFormatter ?? config('event-log.event_formatter');
+
+        if ($formatter) {
+            if (is_string($formatter)) {
+                $formatter = app($formatter);
+            }
+
+            return call_user_func($formatter, $eventLog);
+        }
+
+        return $eventLog->event;
     }
 
     /**

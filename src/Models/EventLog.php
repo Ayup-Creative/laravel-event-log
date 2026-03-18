@@ -20,6 +20,7 @@ use Illuminate\Support\Collection;
  *
  * @property \AyupCreative\EventLog\Support\MetadataCollection $metadata
  * @property \AyupCreative\EventLog\Support\MetadataCollection $meta
+ * @property string $description
  * @property Collection $relations
  */
 #[ObservedBy(UuidObserver::class)]
@@ -113,6 +114,16 @@ class EventLog extends Model implements EventModel
             'related',
             'event_log_relations'
         );
+    }
+
+    /**
+     * Get a human-readable representation of the event.
+     *
+     * @return Attribute
+     */
+    protected function description(): Attribute
+    {
+        return Attribute::get(fn () => app('event-log')->format($this));
     }
 
     /**

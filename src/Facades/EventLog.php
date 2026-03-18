@@ -10,8 +10,10 @@ use Illuminate\Support\Facades\Facade;
  * @method static void log(string $event, \Illuminate\Database\Eloquent\Model $subject, array $related = [], ?string $causerType = null, array $metadata = [])
  * @method static void resolveActorWith(callable $callback)
  * @method static void determineCauserTypeWith(callable $callback)
+ * @method static void formatEventsWith(callable $callback)
  * @method static mixed resolveActor()
  * @method static string resolveCauserType()
+ * @method static string format(\AyupCreative\EventLog\Contracts\EventModel $eventLog)
  * @method static \Illuminate\Database\Eloquent\Collection getFor(\Illuminate\Database\Eloquent\Model $model)
  * @method static \Illuminate\Contracts\Pagination\LengthAwarePaginator getForPaginated(\Illuminate\Database\Eloquent\Model $model)
  *

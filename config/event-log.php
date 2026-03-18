@@ -35,4 +35,19 @@ return [
     |
     */
     'queue' => env('EVENT_LOG_QUEUE', 'default'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Event Formatter
+    |--------------------------------------------------------------------------
+    |
+    | The class used to format event names into human-readable strings.
+    | Must implement a __invoke method and take an EventModel as its only
+    | argument.
+    |
+    | Alternatively, you can register a formatter via the facade:
+    | EventLog::formatEventsWith(function($eventLog) { ... })
+    |
+    */
+    'event_formatter' => null,
 ];
