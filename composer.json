@@ -2,8 +2,10 @@
     "name": "ayup-creative/event-log",
     "description": "Event log package for models in a Laravel application.",
     "require-dev": {
-        "laravel/framework": "^12.0",
-        "orchestra/testbench": "^v10.8.0"
+        "phpunit/phpunit": "^11",
+        "laravel/pint": "^1.0",
+        "laravel/framework": "^12|^13.0",
+        "orchestra/testbench": "^v11.0"
     },
     "autoload": {
         "psr-4": {
@@ -27,6 +29,6 @@
     },
     "scripts": {
         "test": "vendor/bin/phpunit",
-        "coverage": "vendor/bin/phpunit --coverage-html coverage"
+        "pint": "vendor/bin/pint"
     }
 }
