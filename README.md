@@ -44,6 +44,17 @@ php artisan vendor:publish --tag="event-log-config"
 
 ---
 
+## Versions
+
+The package follows semantic versioning. Major version changes indicate breaking changes, while minor and patch versions introduce new features and bug fixes, respectively.
+
+| Version | Laravel |
+|---------|---------|
+| 1.x     | 12.x    |
+| 2.x     | 13.x    |
+
+---
+
 ## Configuration
 
 The published config file `config/event-log.php` allows you to customize the models used by the package:
