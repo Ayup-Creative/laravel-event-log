@@ -20,7 +20,11 @@ trait LogsEvents
      */
     public static function bootLogsEvents(): void
     {
-        static::observe(EventLogObserver::class);
+        $observer = EventLogObserver::class;
+
+        foreach (['created', 'updated', 'deleted', 'restored'] as $event) {
+            static::registerModelEvent($event, "{$observer}@{$event}");
+        }
     }
 
     /**
