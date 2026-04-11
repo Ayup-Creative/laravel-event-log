@@ -56,3 +56,16 @@ jobs:
         with:
           release-type: php
           token: ${{ secrets.GITHUB_TOKEN }}
+
+  cleanup-release-please:
+    name: Cleanup release-please branch
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.merged == true &&
+      startsWith(github.event.pull_request.head.ref, 'release-please')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Delete release-please branch
+        run: |
+          git push origin --delete "${{ github.event.pull_request.head.ref }}"

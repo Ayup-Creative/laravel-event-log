@@ -3,6 +3,7 @@
 namespace AyupCreative\EventLog;
 
 use AyupCreative\EventLog\Contracts\EventModel;
+use BackedEnum;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -24,7 +25,7 @@ class EventLogger
     /**
      * Specify a callback to resolve the current actor ID.
      *
-     * @param  callable  $callback
+     * @param callable $callback
      * @return void
      */
     public function resolveActorWith(callable $callback): void
@@ -35,7 +36,7 @@ class EventLogger
     /**
      * Specify a callback to resolve the current causer type.
      *
-     * @param  callable  $callback
+     * @param callable $callback
      * @return void
      */
     public function determineCauserTypeWith(callable $callback): void
@@ -46,7 +47,7 @@ class EventLogger
     /**
      * Specify a callback to format the event name into a human-readable string.
      *
-     * @param  callable|string  $callback  Closure or class name of a formatter.
+     * @param callable|string $callback Closure or class name of a formatter.
      * @return void
      */
     public function formatEventsWith(callable|string $callback): void
@@ -89,7 +90,7 @@ class EventLogger
     /**
      * Format the event name into a human-readable string.
      *
-     * @param  EventModel  $eventLog
+     * @param EventModel $eventLog
      * @return string
      */
     public function format(EventModel $eventLog): string
@@ -110,21 +111,22 @@ class EventLogger
     /**
      * Log a domain event.
      *
-     * @param  string  $event  The dot-notation event name.
-     * @param  Model   $subject  The primary model.
-     * @param  array   $related  Optional related models.
-     * @param  string|null  $causerType  Optional causer type override.
-     * @param  array   $metadata  Additional metadata for the event.
+     * @param string|BackedEnum $event The dot-notation event name.
+     * @param Model $subject The primary model.
+     * @param array $related Optional related models.
+     * @param string|null $causerType Optional causer type override.
+     * @param array $metadata Additional metadata for the event.
      * @return void
      */
     public function log(
-        string $event,
-        Model $subject,
-        array $related = [],
-        ?string $causerType = null,
-        array $metadata = []
-    ): void {
-        event_log($event, $subject, $related, $causerType, $metadata);
+        string|BackedEnum $event,
+        Model             $subject,
+        array             $related = [],
+        ?string           $causerType = null,
+        array             $metadata = []
+    ): void
+    {
+        log_event($event, $subject, $related, $causerType, $metadata);
     }
 
     /**
@@ -133,7 +135,7 @@ class EventLogger
      * Returns events where the model is either the subject or a related model,
      * ordered by the most recent events first.
      *
-     * @param  Model  $model
+     * @param Model $model
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getFor(Model $model)
@@ -147,7 +149,7 @@ class EventLogger
      * Returns events where the model is either the subject or a related model,
      * ordered by the most recent events first.
      *
-     * @param  Model  $model
+     * @param Model $model
      * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
      */
     public function getForPaginated(Model $model)
@@ -158,7 +160,7 @@ class EventLogger
     /**
      * Get the base query for finding events related to a model.
      *
-     * @param  Model  $model
+     * @param Model $model
      * @return \Illuminate\Database\Eloquent\Builder
      */
     protected function queryFor(Model $model)
@@ -169,10 +171,10 @@ class EventLogger
                     $q->where('related_type', $model::class)
                         ->where('related_id', $model->getKey());
                 })
-                ->orWhere(function ($q) use ($model) {
-                    $q->where('subject_type', $model::class)
-                        ->where('subject_id', $model->getKey());
-                });
+                    ->orWhere(function ($q) use ($model) {
+                        $q->where('subject_type', $model::class)
+                            ->where('subject_id', $model->getKey());
+                    });
             })
             ->latest();
     }

@@ -88,23 +88,36 @@ return [
 
 ### 1. Manual Domain Events
 
-Use the `event_log` helper to record significant domain events asynchronously.
+Use the `log_event` helper to record significant domain events asynchronously. It is recommended to use the namespaced `log_event()` function.
 
 ```php
+use function AyupCreative\EventLog\log_event;
+
 // Basic event
-event_log('organisation.created', $organisation);
+log_event('organisation.created', $organisation);
 
 // Event with related models
-event_log('user.enrolled', $user, [$organisation, $course]);
+log_event('user.enrolled', $user, [$organisation, $course]);
 
 // Event with additional metadata (e.g., tracking reasons, API errors)
-event_log('payment.failed', $payment, metadata: [
+log_event('payment.failed', $payment, metadata: [
     'error_reason' => 'Insufficient funds',
     'provider' => 'Stripe'
 ]);
 ```
 
--   **Event Name**: A human-readable dot-notation string.
+#### Event Enums
+
+The `log_event` helper also supports `BackedEnum` for event names, providing better type safety and IDE autocompletion.
+
+```php
+use function AyupCreative\EventLog\log_event;
+use App\Enums\EventName;
+
+log_event(EventName::ORGANISATION_CREATED, $organisation);
+```
+
+-   **Event Name**: A human-readable dot-notation string or a `BackedEnum`.
     -   **Subject**: The primary Eloquent model the event is about.
     -   **Related**: (Optional) An array of additional Eloquent models linked to this event.
     -   **Causer Type**: (Optional) Explicitly set the type of actor ('user', 'system', 'worker', 'cron').
@@ -196,8 +209,8 @@ WithEventTransaction::run(function () use ($user, $org) {
     $org->save();
     $user->organisations()->attach($org);
 
-    event_log('organisation.created', $org);
-    event_log('user.enrolled', $user, [$org]);
+    \AyupCreative\EventLog\log_event('organisation.created', $org);
+    \AyupCreative\EventLog\log_event('user.enrolled', $user, [$org]);
 });
 ```
 
