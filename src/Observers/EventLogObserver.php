@@ -4,6 +4,7 @@ namespace AyupCreative\EventLog\Observers;
 
 use AyupCreative\EventLog\Features\LogsEvents;
 use Illuminate\Database\Eloquent\Model;
+use function AyupCreative\EventLog\log_event;
 
 /**
  * Class EventLogObserver
@@ -94,7 +95,7 @@ class EventLogObserver
             return;
         }
 
-        event_log(
+        log_event(
             event: $event,
             subject: $model,
             related: $model->eventRelations($event),

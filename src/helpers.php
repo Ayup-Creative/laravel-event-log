@@ -14,6 +14,9 @@ if (! function_exists('event_log')) {
      * to persist the event. This ensures the request performance is not affected
      * by logging operations.
      *
+     * @deprecated Since 2.0.1. Will be removed in 3.0.0. Use \AyupCreative\EventLog\log_event() instead.
+     * @see \AyupCreative\EventLog\log_event()
+     *
      * @param  string  $event  The dot-notation event name (e.g., 'user.created').
      * @param  Model   $subject  The primary model this event is about.
      * @param  array<Model>  $related  Additional models related to this event.

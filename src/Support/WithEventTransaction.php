@@ -26,8 +26,8 @@ class WithEventTransaction
      *          $org->save();
      *          $user->organisations()->attach($org);
      *
-     *          event_log('organisation.created', $org);
-     *          event_log('user.enrolled', $user, [$org]);
+     *          \AyupCreative\EventLog\log_event('organisation.created', $org);
+     *          \AyupCreative\EventLog\log_event('user.enrolled', $user, [$org]);
      *      });
      *
      * @param Closure $callback The callback function to execute within the transaction.
