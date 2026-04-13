@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.1.1](https://github.com/Ayup-Creative/laravel-event-log/compare/v2.1.0...v2.1.1) (2026-04-13)
+
+
+### Miscellaneous Chores
+
+* added licence.md ([fb342c0](https://github.com/Ayup-Creative/laravel-event-log/commit/fb342c041dfc417761843f4eea2d74ee86a9f4c7))
+* remove commit/PR lint step from CI/CD workflow ([796c69c](https://github.com/Ayup-Creative/laravel-event-log/commit/796c69c085c483ee518359a4bdf723351ab1433f))
+* updated workflow to include release-please pull request ref ([f3e5b4d](https://github.com/Ayup-Creative/laravel-event-log/commit/f3e5b4d95eef41bd816a922262c8b3fb49ddb83a))
+
 ## [2.1.0](https://github.com/Ayup-Creative/laravel-event-log/compare/v2.0.0...v2.1.0) (2026-04-11)
 
 
