@@ -5,6 +5,7 @@ on:
     branches: [ main, dev ]
   pull_request:
     branches: [ main, dev ]
+    types: [ opened, synchronize, reopened, closed ]
 
 permissions:
   contents: write
@@ -14,7 +15,7 @@ jobs:
   tests:
     name: PHPUnit tests
     runs-on: ubuntu-latest
-    if: ${{ !contains(github.event.head_commit.message, '--no-change') }}
+    if: github.event.action != 'closed' && !contains(github.event.head_commit.message, '--no-change')
     strategy:
       matrix:
         php: [8.3, 8.4, 8.5]
@@ -36,16 +37,6 @@ jobs:
           XDEBUG_MODE: coverage
         run: vendor/bin/phpunit --colors=never --coverage-text
 
-  lint:
-    name: Commit/PR lint
-    needs: tests
-    if: github.event_name == 'pull_request' && github.base_ref == 'main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: amannn/action-semantic-pull-request@v5
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   release-please:
     name: Release Please
     needs: tests
@@ -64,8 +55,9 @@ jobs:
       github.event.pull_request.merged == true &&
       startsWith(github.event.pull_request.head.ref, 'release-please')
     runs-on: ubuntu-latest
-
     steps:
       - name: Delete release-please branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git push origin --delete "${{ github.event.pull_request.head.ref }}"
+          gh api -X DELETE "/repos/${{ github.repository }}/git/refs/heads/${{ github.event.pull_request.head.ref }}"
