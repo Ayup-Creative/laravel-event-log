@@ -1,6 +1,6 @@
 # Laravel Event Logger
 
-[![PHP Tests](https://github.com/Ayup-Creative/event-log/actions/workflows/phpunit.yml/badge.svg)](https://github.com/ayup-creative/event-log/actions/workflows/phpunit.yml)
+[![CI/CD](https://github.com/Ayup-Creative/laravel-event-log/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/ayup-creative/laravel-event-log/actions/workflows/ci-cd.yml)
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/ayup-creative/event-log.svg?style=flat-square)](https://packagist.org/packages/ayup-creative/event-log)
 [![Total Downloads](https://img.shields.io/packagist/dt/ayup-creative/event-log.svg?style=flat-square)](https://packagist.org/packages/ayup-creative/event-log)
 [![License](https://img.shields.io/packagist/l/ayup-creative/event-log.svg?style=flat-square)](https://packagist.org/packages/ayup-creative/event-log)
