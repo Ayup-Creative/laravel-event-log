@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class EventLogger
 {
+
     /** @var callable|null Callback to resolve the current actor ID. */
     protected $actorResolver = null;
 
@@ -21,6 +22,9 @@ class EventLogger
 
     /** @var callable|null Callback to format the event name. */
     protected $eventFormatter = null;
+
+    /** @var bool Whether to use UUIDs for primary keys. */
+    protected bool $useUuids = false;
 
     /**
      * Specify a callback to resolve the current actor ID.
@@ -155,6 +159,26 @@ class EventLogger
     public function getForPaginated(Model $model)
     {
         return $this->queryFor($model)->paginate();
+    }
+
+    /**
+     * Configure the Event Logger package to use UUIDs for primary keys.
+     *
+     * @return void
+     */
+    public function useUuids(): void
+    {
+        $this->useUuids = true;
+    }
+
+    /**
+     * Return true if the event logger package is configured to use UUIDs.
+     *
+     * @return bool
+     */
+    public function usesUuids(): bool
+    {
+        return $this->useUuids;
     }
 
     /**
