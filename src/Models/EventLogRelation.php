@@ -31,25 +31,21 @@ class EventLogRelation extends Model implements EventRelationModel
 
     /** @var array<string> The attributes that are mass assignable. */
     protected $fillable = [
-        'event_log_id',
+        'event_id',
         'related_type',
         'related_id',
     ];
 
     /**
      * Get the event log record this relation belongs to.
-     *
-     * @return BelongsTo
      */
     public function event(): BelongsTo
     {
-        return $this->belongsTo(EventLog::class, 'event_log_id');
+        return $this->belongsTo(EventLog::class, 'event_id');
     }
 
     /**
      * Get the related model.
-     *
-     * @return MorphTo
      */
     public function related(): MorphTo
     {

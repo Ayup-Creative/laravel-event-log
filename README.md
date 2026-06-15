@@ -314,6 +314,15 @@ foreach ($events as $log) {
 $paginatedEvents = EventLog::getForPaginated($organisation);
 ```
 
+If you need to apply application-specific filters, joins, ordering, or pagination, start from the package query builder instead of changing the package defaults:
+
+```php
+$logs = EventLog::query()
+    ->where('event', 'user.created')
+    ->latest()
+    ->paginate(50);
+```
+
 ### Causer Labels
 The `EventLog` model provides a `causerLabel()` helper to identify the actor:
 -   `user`: Returns the user's name (if authenticated).

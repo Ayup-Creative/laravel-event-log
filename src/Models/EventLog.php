@@ -4,6 +4,7 @@ namespace AyupCreative\EventLog\Models;
 
 use AyupCreative\EventLog\Contracts\EventModel;
 use AyupCreative\EventLog\Observers\UuidObserver;
+use AyupCreative\EventLog\Support\MetadataCollection;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
@@ -18,8 +19,8 @@ use Illuminate\Support\Collection;
  *
  * The main model representing an immutable fact in the system.
  *
- * @property \AyupCreative\EventLog\Support\MetadataCollection $metadata
- * @property \AyupCreative\EventLog\Support\MetadataCollection $meta
+ * @property MetadataCollection $metadata
+ * @property MetadataCollection $meta
  * @property string $description
  * @property Collection $relations
  */
@@ -50,8 +51,6 @@ class EventLog extends Model implements EventModel
 
     /**
      * Get the primary model the event is about.
-     *
-     * @return MorphTo
      */
     public function subject(): MorphTo
     {
@@ -60,8 +59,6 @@ class EventLog extends Model implements EventModel
 
     /**
      * Get the user who caused the event.
-     *
-     * @return BelongsTo
      */
     public function causer(): BelongsTo
     {
@@ -72,8 +69,6 @@ class EventLog extends Model implements EventModel
 
     /**
      * Retrieve the metadata associated with the event log.
-     *
-     * @return HasMany
      */
     public function metadata(): HasMany
     {
@@ -82,8 +77,6 @@ class EventLog extends Model implements EventModel
 
     /**
      * Shorthand for metadata.
-     *
-     * @return Attribute
      */
     protected function meta(): Attribute
     {
@@ -92,34 +85,31 @@ class EventLog extends Model implements EventModel
 
     /**
      * Get the additional relational links for this event.
-     *
-     * @return HasMany
      */
     public function relations(): HasMany
     {
         return $this->hasMany(
-            config('event-log.relation_model')
+            config('event-log.relation_model'),
+            'event_id'
         );
     }
 
     /**
      * Access related models directly (filtered by configured user model).
-     *
-     * @return MorphToMany
      */
     public function related(): MorphToMany
     {
         return $this->morphedByMany(
             config('event-log.user_model'),
             'related',
-            'event_log_relations'
+            'event_log_relations',
+            'event_id',
+            'related_id'
         );
     }
 
     /**
      * Get a human-readable representation of the event.
-     *
-     * @return Attribute
      */
     protected function description(): Attribute
     {
@@ -128,8 +118,6 @@ class EventLog extends Model implements EventModel
 
     /**
      * Get a human-readable label for the causer.
-     *
-     * @return string
      */
     public function causerLabel(): string
     {

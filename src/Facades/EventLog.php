@@ -2,6 +2,7 @@
 
 namespace AyupCreative\EventLog\Facades;
 
+use AyupCreative\EventLog\EventLogger;
 use Illuminate\Support\Facades\Facade;
 
 /**
@@ -16,8 +17,10 @@ use Illuminate\Support\Facades\Facade;
  * @method static string format(\AyupCreative\EventLog\Contracts\EventModel $eventLog)
  * @method static \Illuminate\Database\Eloquent\Collection getFor(\Illuminate\Database\Eloquent\Model $model)
  * @method static \Illuminate\Contracts\Pagination\LengthAwarePaginator getForPaginated(\Illuminate\Database\Eloquent\Model $model)
+ * @method static \Illuminate\Contracts\Pagination\LengthAwarePaginator getAllPaginated()
+ * @method static \Illuminate\Database\Eloquent\Builder query()
  *
- * @see \AyupCreative\EventLog\EventLogger
+ * @see EventLogger
  */
 class EventLog extends Facade
 {

@@ -5,6 +5,8 @@ namespace AyupCreative\EventLog;
 use AyupCreative\EventLog\Contracts\EventModel;
 use BackedEnum;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -14,7 +16,6 @@ use Illuminate\Database\Eloquent\Model;
  */
 class EventLogger
 {
-
     /** @var callable|null Callback to resolve the current actor ID. */
     protected $actorResolver = null;
 
@@ -32,9 +33,6 @@ class EventLogger
 
     /**
      * Specify a callback to resolve the current actor ID.
-     *
-     * @param callable $callback
-     * @return void
      */
     public function resolveActorWith(callable $callback): void
     {
@@ -43,9 +41,6 @@ class EventLogger
 
     /**
      * Specify a callback to resolve the current causer type.
-     *
-     * @param callable $callback
-     * @return void
      */
     public function determineCauserTypeWith(callable $callback): void
     {
@@ -60,8 +55,7 @@ class EventLogger
     /**
      * Specify a callback to format the event name into a human-readable string.
      *
-     * @param callable|string $callback Closure or class name of a formatter.
-     * @return void
+     * @param  callable|string  $callback  Closure or class name of a formatter.
      */
     public function formatEventsWith(callable|string $callback): void
     {
@@ -111,9 +105,6 @@ class EventLogger
 
     /**
      * Format the event name into a human-readable string.
-     *
-     * @param EventModel $eventLog
-     * @return string
      */
     public function format(EventModel $eventLog): string
     {
@@ -133,21 +124,19 @@ class EventLogger
     /**
      * Log a domain event.
      *
-     * @param string|BackedEnum $event The dot-notation event name.
-     * @param Model $subject The primary model.
-     * @param array $related Optional related models.
-     * @param string|null $causerType Optional causer type override.
-     * @param array $metadata Additional metadata for the event.
-     * @return void
+     * @param  string|BackedEnum  $event  The dot-notation event name.
+     * @param  Model  $subject  The primary model.
+     * @param  array  $related  Optional related models.
+     * @param  string|null  $causerType  Optional causer type override.
+     * @param  array  $metadata  Additional metadata for the event.
      */
     public function log(
         string|BackedEnum $event,
-        Model             $subject,
-        array             $related = [],
-        ?string           $causerType = null,
-        array             $metadata = []
-    ): void
-    {
+        Model $subject,
+        array $related = [],
+        ?string $causerType = null,
+        array $metadata = []
+    ): void {
         log_event($event, $subject, $related, $causerType, $metadata);
     }
 
@@ -157,8 +146,7 @@ class EventLogger
      * Returns events where the model is either the subject or a related model,
      * ordered by the most recent events first.
      *
-     * @param Model $model
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return Collection
      */
     public function getFor(Model $model)
     {
@@ -171,8 +159,7 @@ class EventLogger
      * Returns events where the model is either the subject or a related model,
      * ordered by the most recent events first.
      *
-     * @param Model $model
-     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
+     * @return LengthAwarePaginator
      */
     public function getForPaginated(Model $model)
     {
@@ -186,13 +173,19 @@ class EventLogger
      */
     public function getAllPaginated()
     {
-        return $this->getQuery()->paginate();
+        return $this->query()->paginate();
+    }
+
+    /**
+     * Retrieve the base query for all logged events.
+     */
+    public function query(): Builder
+    {
+        return $this->getQuery();
     }
 
     /**
      * Configure the Event Logger package to use UUIDs for primary keys.
-     *
-     * @return void
      */
     public function useUuids(): void
     {
@@ -201,8 +194,6 @@ class EventLogger
 
     /**
      * Return true if the event logger package is configured to use UUIDs.
-     *
-     * @return bool
      */
     public function usesUuids(): bool
     {
@@ -212,8 +203,7 @@ class EventLogger
     /**
      * Get the base query for finding events related to a model.
      *
-     * @param Model $model
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @return Builder
      */
     protected function getQueryFor(Model $model)
     {
@@ -243,8 +233,8 @@ class EventLogger
     /**
      * Proxy static calls to the singleton in the container.
      *
-     * @param string $method
-     * @param array $args
+     * @param  string  $method
+     * @param  array  $args
      * @return mixed
      */
     public static function __callStatic($method, $args)
