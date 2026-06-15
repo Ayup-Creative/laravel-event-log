@@ -1,7 +1,9 @@
 <?php
 
+use AyupCreative\EventLog\Facades\EventLog;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Schema\ForeignKeyDefinition;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -11,34 +13,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('event_logs', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-
-            $table->string('event');
-
-            $table->morphs('subject');
-
-            $table->string('causer_id')
-                ->nullable()
-                ->index();
-
-            $table->string('causer_type')->nullable(); // user | system | job | webhook
-
-            $table->string('initiator_id')->nullable()->index();
-
-            $table->uuid('correlation_id')->index();
-            $table->uuid('transaction_id')->nullable()->index();
-
-            $table->string('idempotency_key')->unique();
-
-            $table->timestamps(precision: 3);
-        });
-
-        Schema::create('event_log_relations', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->uuid('event_log_id');
-            $table->morphs('related'); // organisation, mandate, user, etc
-        });
+        // Event log table creation has been migrated to a single migration file.
+        // This migration is here to ensure rollbacks on previous installations do not fail.
     }
 
     /**
@@ -46,7 +22,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // Event log table creation has been migrated to a single migration file.
+        // This migration is here to ensure rollbacks on previous installations do not fail.
         Schema::dropIfExists('event_logs');
         Schema::dropIfExists('event_log_relations');
+        Schema::dropIfExists('event_log_metadata');
     }
 };
