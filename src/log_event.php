@@ -31,6 +31,9 @@ function log_event(
         causerId: app('event-log')->resolveActor(),
         causerType: $causerType ?? app('event-log')->resolveCauserType(),
         transactionId: EventContext::transactionId(),
-        metadata: $metadata
+        metadata: array_merge(
+            app('event-log')->resolveMetadata(),
+            $metadata
+        )
     )->onQueue(config('event-log.queue'));
 }

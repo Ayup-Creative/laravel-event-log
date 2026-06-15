@@ -37,13 +37,13 @@ return new class extends Migration
 
         Schema::create('event_log_relations', function (Blueprint $table) {
             $this->primaryKey($table);
-            $this->foreignKey($table, 'event_log_id', 'event_logs')->cascadeOnDelete();
+            $this->foreignKey($table, 'event_id', 'event_logs')->cascadeOnDelete();
             $table->morphs('related'); // organisation, mandate, user, etc
         });
 
         Schema::create('event_log_metadata', function (Blueprint $table) {
             $this->primaryKey($table);
-            $this->foreignKey($table, 'event_log_id', 'event_logs')->cascadeOnDelete();
+            $this->foreignKey($table, 'event_id', 'event_logs')->cascadeOnDelete();
             $table->string('key');
             $table->longText('value')->nullable();
         });

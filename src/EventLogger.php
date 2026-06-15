@@ -4,6 +4,7 @@ namespace AyupCreative\EventLog;
 
 use AyupCreative\EventLog\Contracts\EventModel;
 use BackedEnum;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -19,6 +20,9 @@ class EventLogger
 
     /** @var callable|null Callback to resolve the current causer type. */
     protected $causerTypeResolver = null;
+
+    /** @var callable|null Callback to resolve global metadata. */
+    protected $metadataResolver = null;
 
     /** @var callable|null Callback to format the event name. */
     protected $eventFormatter = null;
@@ -46,6 +50,11 @@ class EventLogger
     public function determineCauserTypeWith(callable $callback): void
     {
         $this->causerTypeResolver = $callback;
+    }
+
+    public function resolveMetadataWith(callable $callback): void
+    {
+        $this->metadataResolver = $callback;
     }
 
     /**
@@ -89,6 +98,15 @@ class EventLogger
         }
 
         return 'user';
+    }
+
+    public function resolveMetadata()
+    {
+        if ($this->metadataResolver) {
+            return (array) call_user_func($this->metadataResolver, app());
+        }
+
+        return [];
     }
 
     /**
@@ -144,7 +162,7 @@ class EventLogger
      */
     public function getFor(Model $model)
     {
-        return $this->queryFor($model)->get();
+        return $this->getQueryFor($model)->get();
     }
 
     /**
@@ -158,7 +176,17 @@ class EventLogger
      */
     public function getForPaginated(Model $model)
     {
-        return $this->queryFor($model)->paginate();
+        return $this->getQueryFor($model)->paginate();
+    }
+
+    /**
+     * Retrieve a unified timeline of all events.
+     *
+     * @return LengthAwarePaginator
+     */
+    public function getAllPaginated()
+    {
+        return $this->getQuery()->paginate();
     }
 
     /**
@@ -187,9 +215,9 @@ class EventLogger
      * @param Model $model
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    protected function queryFor(Model $model)
+    protected function getQueryFor(Model $model)
     {
-        return app('event')::query()
+        return $this->getQuery()
             ->where(function ($q) use ($model) {
                 $q->whereHas('relations', function ($q) use ($model) {
                     $q->where('related_type', $model::class)
@@ -199,8 +227,17 @@ class EventLogger
                         $q->where('subject_type', $model::class)
                             ->where('subject_id', $model->getKey());
                     });
-            })
-            ->latest();
+            });
+    }
+
+    /**
+     * Get the base query for finding all events.
+     *
+     * @return mixed
+     */
+    protected function getQuery()
+    {
+        return app('event')::query()->latest();
     }
 
     /**
