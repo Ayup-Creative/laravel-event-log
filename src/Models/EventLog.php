@@ -72,7 +72,7 @@ class EventLog extends Model implements EventModel
      */
     public function metadata(): HasMany
     {
-        return $this->hasMany(EventMetadata::class, 'event_id');
+        return $this->hasMany(EventMetadata::class, 'event_log_id');
     }
 
     /**
@@ -90,7 +90,7 @@ class EventLog extends Model implements EventModel
     {
         return $this->hasMany(
             config('event-log.relation_model'),
-            'event_id'
+            'event_log_id'
         );
     }
 
@@ -103,7 +103,7 @@ class EventLog extends Model implements EventModel
             config('event-log.user_model'),
             'related',
             'event_log_relations',
-            'event_id',
+            'event_log_id',
             'related_id'
         );
     }

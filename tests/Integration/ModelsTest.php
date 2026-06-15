@@ -37,12 +37,31 @@ class ModelsTest extends TestCase
         $this->assertCount(1, $log->relations);
         $this->assertTrue($log->relations->first()->is($relation));
 
-        $this->assertEquals($log->id, $relation->event_id);
+        $this->assertEquals($log->id, $relation->event_log_id);
         $this->assertInstanceOf(EventLog::class, $relation->event);
         $this->assertTrue($relation->event->is($log));
 
         $this->assertInstanceOf(DummyUser::class, $relation->related);
         $this->assertTrue($relation->related->is($user));
+    }
+
+    public function test_event_log_metadata_relationship_uses_event_log_id(): void
+    {
+        $log = EventLog::create([
+            'event' => 'test.event',
+            'subject_type' => DummyUser::class,
+            'subject_id' => 'subject-id',
+            'correlation_id' => 'corr-meta',
+            'idempotency_key' => 'key-meta',
+        ]);
+
+        $metadata = $log->metadata()->create([
+            'key' => 'ip',
+            'value' => '127.0.0.1',
+        ]);
+
+        $this->assertEquals($log->id, $metadata->event_log_id);
+        $this->assertTrue($metadata->eventLog->is($log));
     }
 
     public function test_event_log_related_morph_to_many(): void

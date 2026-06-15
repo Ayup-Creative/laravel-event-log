@@ -31,7 +31,7 @@ class EventLogRelation extends Model implements EventRelationModel
 
     /** @var array<string> The attributes that are mass assignable. */
     protected $fillable = [
-        'event_id',
+        'event_log_id',
         'related_type',
         'related_id',
     ];
@@ -41,7 +41,7 @@ class EventLogRelation extends Model implements EventRelationModel
      */
     public function event(): BelongsTo
     {
-        return $this->belongsTo(EventLog::class, 'event_id');
+        return $this->belongsTo(EventLog::class, 'event_log_id');
     }
 
     /**

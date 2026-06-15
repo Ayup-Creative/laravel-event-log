@@ -5,10 +5,9 @@ namespace AyupCreative\EventLog\Models;
 use AyupCreative\EventLog\Observers\UuidObserver;
 use AyupCreative\EventLog\Support\MetadataCollection;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Collection;
-use Serializable;
 
 /**
  * Class EventMetadata
@@ -35,7 +34,7 @@ class EventMetadata extends Model
 
     /** @var array<string> The attributes that are mass assignable. */
     protected $fillable = [
-        'event_id',
+        'event_log_id',
         'key',
         'value',
     ];
@@ -48,8 +47,7 @@ class EventMetadata extends Model
     /**
      * Create a new Eloquent Collection instance.
      *
-     * @param array<int, Model> $models
-     * @return MetadataCollection
+     * @param  array<int, Model>  $models
      */
     public function newCollection(array $models = []): MetadataCollection
     {
@@ -59,10 +57,10 @@ class EventMetadata extends Model
     /**
      * Retrieve the event log that the metadata belongs to.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo
      */
     public function eventLog()
     {
-        return $this->belongsTo(EventLog::class, 'event_id');
+        return $this->belongsTo(EventLog::class, 'event_log_id');
     }
 }
