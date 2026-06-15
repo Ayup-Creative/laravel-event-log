@@ -2,14 +2,15 @@
 
 namespace AyupCreative\EventLog\Tests\Integration;
 
-use AyupCreative\EventLog\EventLogger;
 use AyupCreative\EventLog\Facades\EventLog as EventLogFacade;
+use AyupCreative\EventLog\Jobs\WriteEventLogJob;
 use AyupCreative\EventLog\Models\EventLog;
 use AyupCreative\EventLog\Tests\Models\DummyBook;
 use AyupCreative\EventLog\Tests\Models\DummyUser;
 use AyupCreative\EventLog\Tests\TestCase;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Queue;
-use AyupCreative\EventLog\Jobs\WriteEventLogJob;
 
 class EventLoggerTest extends TestCase
 {
@@ -21,7 +22,7 @@ class EventLoggerTest extends TestCase
 
     public function test_it_writes_asynchronously(): void
     {
-        $subject = new DummyBook();
+        $subject = new DummyBook;
         $subject->id = 1;
 
         EventLogFacade::log('test.event', $subject);
@@ -144,13 +145,57 @@ class EventLoggerTest extends TestCase
 
         $events = EventLogFacade::getForPaginated($user);
 
-        $this->assertInstanceOf(\Illuminate\Contracts\Pagination\LengthAwarePaginator::class, $events);
+        $this->assertInstanceOf(LengthAwarePaginator::class, $events);
         $this->assertCount(1, $events->items());
+    }
+
+    public function test_query_returns_a_builder_that_can_be_filtered_by_host_applications(): void
+    {
+        EventLog::create([
+            'event' => 'book.created',
+            'subject_type' => DummyBook::class,
+            'subject_id' => 'book-1',
+            'correlation_id' => 'corr-query-1',
+            'idempotency_key' => 'query-key-1',
+        ]);
+
+        EventLog::create([
+            'event' => 'book.updated',
+            'subject_type' => DummyBook::class,
+            'subject_id' => 'book-2',
+            'correlation_id' => 'corr-query-2',
+            'idempotency_key' => 'query-key-2',
+        ]);
+
+        $query = EventLogFacade::query();
+
+        $this->assertInstanceOf(Builder::class, $query);
+        $this->assertSame(
+            ['book.updated'],
+            $query->where('event', 'book.updated')->pluck('event')->all(),
+        );
+    }
+
+    public function test_get_all_paginated_preserves_existing_behavior(): void
+    {
+        EventLog::create([
+            'event' => 'book.created',
+            'subject_type' => DummyBook::class,
+            'subject_id' => 'book-1',
+            'correlation_id' => 'corr-paginated-1',
+            'idempotency_key' => 'paginated-key-1',
+        ]);
+
+        $events = EventLogFacade::getAllPaginated();
+
+        $this->assertInstanceOf(LengthAwarePaginator::class, $events);
+        $this->assertCount(1, $events->items());
+        $this->assertSame('book.created', $events->items()[0]->event);
     }
 
     public function test_it_handles_models_without_ids_gracefully(): void
     {
-        $subject = new DummyBook();
+        $subject = new DummyBook;
         // ID is null
 
         EventLogFacade::log('test.event', $subject);
@@ -175,7 +220,7 @@ class EventLoggerTest extends TestCase
     {
         $subject = DummyBook::create(['title' => 'Test Book']);
 
-        EventLogFacade::resolveActorWith(fn() => 'custom-actor-id');
+        EventLogFacade::resolveActorWith(fn () => 'custom-actor-id');
 
         EventLogFacade::log('test.event', $subject);
 
@@ -184,14 +229,14 @@ class EventLoggerTest extends TestCase
         });
 
         // Reset for other tests
-        EventLogFacade::resolveActorWith(fn() => auth()->id());
+        EventLogFacade::resolveActorWith(fn () => auth()->id());
     }
 
     public function test_it_uses_custom_causer_type_resolver(): void
     {
         $subject = DummyBook::create(['title' => 'Test Book']);
 
-        EventLogFacade::determineCauserTypeWith(fn() => 'cron');
+        EventLogFacade::determineCauserTypeWith(fn () => 'cron');
 
         EventLogFacade::log('test.event', $subject);
 
@@ -200,6 +245,6 @@ class EventLoggerTest extends TestCase
         });
 
         // Reset for other tests
-        EventLogFacade::determineCauserTypeWith(fn() => app()->runningInConsole() ? 'worker' : 'user');
+        EventLogFacade::determineCauserTypeWith(fn () => app()->runningInConsole() ? 'worker' : 'user');
     }
 }

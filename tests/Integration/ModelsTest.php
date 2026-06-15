@@ -3,7 +3,6 @@
 namespace AyupCreative\EventLog\Tests\Integration;
 
 use AyupCreative\EventLog\Models\EventLog;
-use AyupCreative\EventLog\Models\EventLogRelation;
 use AyupCreative\EventLog\Tests\Models\DummyUser;
 use AyupCreative\EventLog\Tests\TestCase;
 
@@ -13,7 +12,7 @@ class ModelsTest extends TestCase
     {
         $user = DummyUser::create(['name' => 'Causer']);
         $subject = DummyUser::create(['name' => 'Subject']);
-        
+
         $log = EventLog::create([
             'event' => 'test.event',
             'subject_type' => $subject::class,
@@ -31,17 +30,17 @@ class ModelsTest extends TestCase
 
         $this->assertInstanceOf(DummyUser::class, $log->subject);
         $this->assertTrue($log->subject->is($subject));
-        
+
         $this->assertInstanceOf(DummyUser::class, $log->causer);
         $this->assertTrue($log->causer->is($user));
-        
+
         $this->assertCount(1, $log->relations);
         $this->assertTrue($log->relations->first()->is($relation));
-        
-        $this->assertEquals($log->id, $relation->event_log_id);
+
+        $this->assertEquals($log->id, $relation->event_id);
         $this->assertInstanceOf(EventLog::class, $relation->event);
         $this->assertTrue($relation->event->is($log));
-        
+
         $this->assertInstanceOf(DummyUser::class, $relation->related);
         $this->assertTrue($relation->related->is($user));
     }
@@ -84,7 +83,7 @@ class ModelsTest extends TestCase
 
         $log->causer_type = 'unknown';
         $this->assertSame('Unknown', $log->causerLabel());
-        
+
         $log->causer_type = 'user';
         $log->setRelation('causer', null);
         $this->assertSame('Unknown user', $log->causerLabel());
